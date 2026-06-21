@@ -49,62 +49,56 @@ FetchContent_MakeAvailable(json)
 find_package(SQLite3 REQUIRED)
 
 # ---------------------------------------------------------------------------
-# Utility library (Deferred to Phase 3)
+# Utility library
 # ---------------------------------------------------------------------------
-# add_library(util_lib STATIC src/util/formatting.cpp)
-# target_include_directories(util_lib PUBLIC src/)
+add_library(util_lib STATIC src/util/formatting.cpp)
+target_include_directories(util_lib PUBLIC src/)
 
 # ---------------------------------------------------------------------------
-# Layer 1: Model & Services (Deferred to Phase 3)
+# Layer 1: Model & Services (Geocoding implementation)
 # ---------------------------------------------------------------------------
-# add_library(weather_lib STATIC
-#     src/model/weather_data.cpp
-#     src/service/http_client.cpp
-#     src/service/weather_parser.cpp
-# )
-# target_include_directories(weather_lib PUBLIC src/)
-# target_link_libraries(weather_lib PUBLIC
-#     util_lib
-#     cpr::cpr
-#     nlohmann_json::nlohmann_json
-#     SQLite3::SQLite3
-# )
-
-# ---------------------------------------------------------------------------
-# Layer 2: Controller (Deferred to Phase 4)
-# ---------------------------------------------------------------------------
-# add_library(controller_lib STATIC src/controller/app_controller.cpp)
-# target_include_directories(controller_lib PUBLIC src/)
-# target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
-
-# ---------------------------------------------------------------------------
-# Layer 3: View (Deferred to Phase 5)
-# ---------------------------------------------------------------------------
-# add_library(app_lib STATIC
-#     src/view/app.cpp
-#     src/view/weather_icon.cpp
-#     src/view/sparkline_graph.cpp
-# )
-# target_include_directories(app_lib PUBLIC src/)
-# target_link_libraries(app_lib PUBLIC
-#     ftxui::screen
-#     ftxui::dom
-#     ftxui::component
-#     controller_lib
-# )
-
-# ---------------------------------------------------------------------------
-# Main executable (Directly built in Phase 2)
-# ---------------------------------------------------------------------------
-add_executable(weather_cli src/main.cpp)
-target_link_libraries(weather_cli PRIVATE
-    ftxui::screen
-    ftxui::dom
-    ftxui::component
+add_library(weather_lib STATIC
+    src/service/http_client.cpp
+    src/service/geocoding_service.cpp
+)
+target_include_directories(weather_lib PUBLIC src/)
+target_link_libraries(weather_lib PUBLIC
+    util_lib
+    cpr::cpr
+    nlohmann_json::nlohmann_json
+    SQLite3::SQLite3
 )
 
 # ---------------------------------------------------------------------------
-# Test executable (Deferred to Phase 3/6)
+# Layer 2: Controller
+# ---------------------------------------------------------------------------
+add_library(controller_lib STATIC 
+    src/controller/app_controller.cpp
+    src/controller/location_controller.cpp
+)
+target_include_directories(controller_lib PUBLIC src/)
+target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
+
+# ---------------------------------------------------------------------------
+# Layer 3: View
+# ---------------------------------------------------------------------------
+add_library(app_lib STATIC src/view/app.cpp)
+target_include_directories(app_lib PUBLIC src/)
+target_link_libraries(app_lib PUBLIC
+    ftxui::screen
+    ftxui::dom
+    ftxui::component
+    controller_lib
+)
+
+# ---------------------------------------------------------------------------
+# Main executable
+# ---------------------------------------------------------------------------
+add_executable(weather_cli src/main.cpp)
+target_link_libraries(weather_cli PRIVATE app_lib)
+
+# ---------------------------------------------------------------------------
+# Test executable (Deferred to Phase 7)
 # ---------------------------------------------------------------------------
 # add_executable(run_tests
 #     tests/test_main.cpp

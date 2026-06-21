@@ -10,7 +10,14 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
+#include "model/app_state.hpp"
+#include "controller/app_controller.hpp"
+#include "controller/location_controller.hpp"
+#include "view/app.hpp"
+
 int main(int argc, char* argv[]) {
+    using namespace weather_cli;
+
     std::string area_code = "";
     std::string country = "";
 
@@ -29,7 +36,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-
     // Scenario 1: Headless CLI Parameters (e.g. --area-code 2155 --country AUS)
     if (!area_code.empty() || !country.empty()) {
         std::cout << "Area Code: " << area_code << ", Country: " << country << "\n";
@@ -47,35 +53,24 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Scenario 3: Interactive TUI Stub (launches a menu to just quit)
-    using namespace ftxui;
-    auto screen = ScreenInteractive::FitComponent();
+    // Scenario 3: Real Interactive TUI Setup
+    try {
+        auto screen = ftxui::ScreenInteractive::Fullscreen();
 
-    int selected = 0;
-    std::vector<std::string> menu_entries = {
-        "Quit"
-    };
-
-    auto menu = Menu(&menu_entries, &selected);
-    auto component = Renderer(menu, [&] {
-        return vbox({
-            text("Quick Weather CLI App (Stub)") | bold | center,
-            separator(),
-            text("Active Location: None (TUI Stub Mode)"),
-            separator(),
-            menu->Render() | border,
+        AppState state;
+        AppController controller(state, screen.ExitLoopClosure());
+        
+        LocationController loc_controller(state, [&screen] {
+            screen.PostEvent(ftxui::Event::Custom);
         });
-    });
 
-    auto closure = screen.ExitLoopClosure();
-    auto component_with_quit = CatchEvent(component, [&](Event event) {
-        if (event == Event::Character('q') || event == Event::Escape || (selected == 0 && event == Event::Return)) {
-            closure();
-            return true;
-        }
-        return false;
-    });
+        App app(state, controller, loc_controller);
 
-    screen.Loop(component_with_quit);
-    return EXIT_SUCCESS;
+        screen.Loop(app.GetComponent());
+        return EXIT_SUCCESS;
+    } catch (const std::exception& e) {
+        std::cerr << "Fatal TUI Error: " << e.what() << "\n";
+        return EXIT_FAILURE;
+    }
 }
+

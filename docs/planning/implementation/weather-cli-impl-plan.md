@@ -230,36 +230,43 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 - [x] (No other C++ `.cpp` or `.hpp` source files will be created in this phase.)
 
 
-### Phase 3 — TUI Outline Layout Setup (`AppState`, `AppController`, `App` View only) (Current Phase)
-- [ ] Implement `src/model/app_state.hpp` defining the TUI state model (active coordinates, units configuration, active tab selection, scrubber indices).
-- [ ] Implement `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp` coordinating core user actions (toggling Celsius/Fahrenheit, shifting tab selects, scrubbing timeline indices, exiting the loop).
-- [ ] Implement `src/view/app.hpp` and `src/view/app.cpp` building the visual wireframe:
-  - Top horizontal menu bar with options (Refresh, Units, Quit).
-  - Status banner showing mock city details.
-  - Summary row printing static condition text and mock ASCII icon clouds.
-  - View selectors for Temperature and Rain Probability graphs.
-  - A static FTXUI Canvas rendering horizontal lines to mockup the plotting area.
-  - Interactive slider timeline that scrubs indices (0 to 23).
-  - An hourly details box updating text metrics dynamically based on the active slider index.
-- [ ] Define the library targets (`util_lib`, `controller_lib`, `app_lib`) in `CMakeLists.txt` and link `weather_cli` executable to `app_lib`.
-- [ ] (No geocoding, HTTP network requests, parsing libraries, databases, custom canvas plotters, or WMO descriptions will be built in this phase. The UI components will render static mocked content.)
+### Phase 3 — TUI Outline Layout Setup (`AppState`, `AppController`, `App` View only) ✅ Done
+- [x] Implement `src/model/app_state.hpp` defining the TUI state model (active coordinates, units configuration, active tab selection, scrubber indices).
+- [x] Implement `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp` coordinating core user actions (toggling Celsius/Fahrenheit, shifting tab selects, scrubbing timeline indices, exiting the loop).
+- [x] Implement `src/view/app.hpp` and `src/view/app.cpp` building the visual wireframe:
+  - [x] Top horizontal menu bar with options (Refresh, Units, Quit).
+  - [x] Status banner showing mock city details.
+  - [x] Summary row printing static condition text and mock ASCII icon clouds.
+  - [x] View selectors for Temperature and Rain Probability graphs.
+  - [x] A static FTXUI Canvas rendering horizontal lines to mockup the plotting area.
+  - [x] Interactive slider timeline that scrubs indices (0 to 23).
+  - [x] An hourly details box updating text metrics dynamically based on the active slider index.
+- [x] Define the library targets (`util_lib`, `controller_lib`, `app_lib`) in `CMakeLists.txt` and link `weather_cli` executable to `app_lib`.
+- [x] (No geocoding, HTTP network requests, parsing libraries, databases, custom canvas plotters, or WMO descriptions will be built in this phase. The UI components will render static mocked content.)
 
-### Phase 4 — Service & Model Layer Setup
+
+### Phase 4 — Geocoding Controller & Service (Locations Search API Integration) ✅ Done
+- [x] Implement `src/service/http_client.hpp` and `src/service/http_client.cpp` using CPR to make GET requests to the Geocoding API.
+- [x] Implement `src/service/geocoding_service.hpp` and `src/service/geocoding_service.cpp` to compose search query URLs, query the Open-Meteo search endpoint, and parse search results (extracting name, country, latitude, longitude, and region) using `nlohmann/json`.
+- [x] Implement `src/controller/location_controller.hpp` and `src/controller/location_controller.cpp` to manage location searches (sending geocoding queries, performing fetches in a background thread to prevent TUI blocking, and updating suggestions array in `AppState`).
+- [x] Add `LocationController` to `main.cpp` and update `CMakeLists.txt` build targets to link `http_client.cpp`, `geocoding_service.cpp`, and `location_controller.cpp`.
+- [x] (No forecast API requests, sparkline canvas plotting, or ASCII icon renderers will be implemented in this phase. Weather coordinates changes will simply update the mock lat/lon numbers in the status panel.)
+
+
+### Phase 5 — Service & Model Layer Setup (Forecast API Integration)
 - [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
 - [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
-- [ ] Set up `src/service/http_client.hpp/cpp` queries with query URL composition.
-- [ ] Incorporate Catch2 verification tests for JSON parses and data caching.
+- [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
+- [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
 - [ ] Define the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 5 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+### Phase 6 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 
-### Phase 6 — System Integration & Verification
+### Phase 7 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.
 - [ ] Code formatting check using Clang-Format verification.
-
-

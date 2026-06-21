@@ -26,6 +26,7 @@ graph TD
 
     subgraph Service ["Service Layer (Infrastructure Services)"]
         Geocoding["GeocodingService (src/service/geocoding_service.cpp)"]
+        Zippopotam["ZippopotamService (src/service/zippopotam_service.cpp)"]
         Http["HttpClient (src/service/http_client.cpp)"]
     end
 
@@ -42,6 +43,7 @@ graph TD
 
     subgraph External ["External API"]
         OpenMeteo["Open-Meteo API"]
+        Zippopotamus["Zippopotam.us API"]
     end
 
     %% Interactions
@@ -56,8 +58,11 @@ graph TD
     LocCtrl -->|"Updates local modal parameters"| SearchState
     AboutCtrl -->|"Updates about visibility"| AboutState
     LocCtrl -->|"Spawns query on background thread"| Geocoding
+    Geocoding -->|"Delegates postcode queries"| Zippopotam
     Geocoding -->|"GET requests via HTTP"| Http
+    Zippopotam -->|"GET requests via HTTP"| Http
     Http -->|"GET queries over CPR"| OpenMeteo
+    Http -->|"GET queries over CPR"| Zippopotamus
     DbCtrl -->|"Initializes & queries/saves"| Sqlite
     DbCtrl -->|"Loads / populates"| Repo
 
@@ -71,10 +76,10 @@ graph TD
     linkStyle 0,1,2,3,4,5,6 stroke:#28a745,stroke-width:2px;
 
     %% Style All Other Flow Lines Darker Blue
-    linkStyle 7,8,9,10,11,12,13,14 stroke:#0056b3,stroke-width:2px;
+    linkStyle 7,8,9,10,11,12,13,14,15,16,17 stroke:#0056b3,stroke-width:2px;
 
     %% Style Data Binding Arrows Purple
-    linkStyle 15,16,17,18 stroke:#6f42c1,stroke-width:2px;
+    linkStyle 18,19,20,21 stroke:#6f42c1,stroke-width:2px;
 ```
 
 ---
@@ -100,7 +105,9 @@ Coordinating tasks are split hierarchically between the central application coor
 
 ### Service Layer (Pure C++ Domain Services)
 * **GeocodingService** ([geocoding_service.cpp](../src/service/geocoding_service.cpp)):
-  Formulates REST endpoints for the Open-Meteo search queries and parses incoming JSON payload data into clean model structures.
+  Acts as a router/facade for location lookups. Formulates REST endpoints for standard Open-Meteo city search queries and delegates numeric postcode queries to `ZippopotamService`.
+* **ZippopotamService** ([zippopotam_service.cpp](../src/service/zippopotam_service.cpp)):
+  Formulates REST endpoints for `api.zippopotam.us` postcode lookups and parses its specific JSON payload into clean model structures.
 * **HttpClient** ([http_client.cpp](../src/service/http_client.cpp)):
   Stateless HTTP retrieval wrapper over the CPR request client.
 * **Separation Rule**: **Stateless & logic-focused.** Services are completely unaware of dashboard state lifecycles, active slider views, or terminal focus configurations. They take clean parameters, query remote networks, parse arrays, and propagate runtime exceptions.
@@ -133,11 +140,13 @@ graph TD
     SearchState["LocationSearchState (src/model/location_search_state.hpp)"]
     AppState["AppState (src/model/app_state.hpp)"]
     Geocoding["GeocodingService (src/service/geocoding_service.cpp)"]
+    Zippopotam["ZippopotamService (src/service/zippopotam_service.cpp)"]
     DbCtrl["DatabaseController (src/controller/db_controller.cpp)"]
 
     LocView -->|"Triggers Search / Open / Cancel"| LocCtrl
     LocCtrl -->|"Updates local modal parameters"| SearchState
     LocCtrl -->|"Spawns background thread query"| Geocoding
+    Geocoding -->|"Delegates postcode queries"| Zippopotam
     LocCtrl -->|"Writes final coordinates (on Select)"| AppState
     LocCtrl -->|"Saves favorited locations"| DbCtrl
 
@@ -145,7 +154,7 @@ graph TD
     linkStyle 0,4 stroke:#28a745,stroke-width:2px;
 
     %% Style Other Flow Lines Darker Blue
-    linkStyle 1,2,3 stroke:#0056b3,stroke-width:2px;
+    linkStyle 1,2,3,5 stroke:#0056b3,stroke-width:2px;
 ```
 
 * **Flow & Responsibilities**:

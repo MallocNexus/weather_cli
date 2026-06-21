@@ -106,18 +106,9 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             } else if (suggestions_menu_->Focused()) {
                 if (event == Event::Tab) {
                     search_input_->TakeFocus();
+                    return true;
                 } else {
-                    // ArrowDown: move selection down, clamp at last item
-                    size_t suggestions_count = 0;
-                    {
-                        std::lock_guard<std::mutex> lock(state.mutex);
-                        suggestions_count = state.search_suggestions.size();
-                    }
-                    if (suggestions_count > 0 &&
-                        static_cast<size_t>(state.selected_suggestion_index) < suggestions_count - 1) {
-                        state.selected_suggestion_index++;
-                    }
-                    // At last item: do nothing (consume event)
+                    return false; // Let the menu handle ArrowDown natively
                 }
             }
             return true;
@@ -131,12 +122,14 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             } else if (suggestions_menu_->Focused()) {
                 if (event == Event::TabReverse) {
                     search_input_->TakeFocus();
+                    return true;
                 } else {
                     if (state.selected_suggestion_index <= 0) {
                         state.selected_suggestion_index = 0;
                         save_checkbox_->TakeFocus();
+                        return true;
                     } else {
-                        state.selected_suggestion_index--;
+                        return false; // Let the menu handle ArrowUp natively
                     }
                 }
             }
@@ -202,9 +195,8 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             text("Matching Cities:") | bold,
             suggestions_box | size(HEIGHT, GREATER_THAN, 5) | border,
             separator(),
-            hbox({
+            vbox({
                 text("[Esc] Cancel  [Tab/Arrows] Cycle Focus") | dim,
-                filler(),
                 text("[Enter] Search / Select / Toggle") | dim
             })
         }) | size(WIDTH, EQUAL, 60) | border | color(Color::Cyan) | clear_under | center;

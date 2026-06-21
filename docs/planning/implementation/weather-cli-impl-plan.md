@@ -355,7 +355,7 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
   - [x] Reset `cursor_position = 0` inside `LocationController` during modal state transitions (Select, Cancel, Open) to prevent cursor clipping.
   - [x] Style cursor highlight naturally by removing background color overrides from the text input transform.
 
-### Phase 13 — CLI Postcode + Country Geocoding Lookup ⬅ Next
+### Phase 13 — CLI Postcode + Country Geocoding Lookup ✅ Done
 Wire the existing headless CLI path in `main.cpp` to actually call the geocoding
 service when `--area-code` and `--country` are provided, resolve the location,
 print it to stdout, and exit — no TUI launched.
@@ -374,26 +374,26 @@ Resolved location:
   Lon:     151.0000
 ```
 
-- [ ] **Step 13.1** — Extend `GeocodingService::Search` signature:
-  - [ ] Add `const std::string& country_code = ""` default parameter to `Search` in `src/service/geocoding_service.hpp`.
-  - [ ] Append `&countryCode=<code>` to the URL in `geocoding_service.cpp` when `country_code` is non-empty.
-  - [ ] Existing `LocationController` call (no country code) is unaffected via default arg.
-- [ ] **Step 13.2** — Wire geocoding into headless CLI path in `main.cpp`:
-  - [ ] Add `#include "service/geocoding_service.hpp"` to `main.cpp`.
-  - [ ] Replace the echo stub (`std::cout << "Area Code: ..."`) with a real synchronous `GeocodingService::Search(area_code, country)` call.
-  - [ ] Print resolved `LocationMatch` fields (name, region, country, latitude, longitude) to stdout.
-  - [ ] Print an error to stderr and return `EXIT_FAILURE` when no results are found.
-- [ ] **Step 13.3** — Build and manual test:
-  - [ ] `./weather_cli --area-code 2153 --country AU` → Baulkham Hills, NSW, Australia.
-  - [ ] `./weather_cli --area-code 90210 --country US` → Beverly Hills, California.
-  - [ ] `./weather_cli --area-code 99999 --country ZZ` → error + exit code 1.
-  - [ ] `echo "2153 AU" | ./weather_cli` → same Baulkham Hills output (stdin pipe path covered by same fix).
-  - [ ] `./weather_cli` (no args) → TUI launches normally (regression check).
-- [ ] **Step 13.4** — Update `README.md`:
-  - [ ] Add a **CLI Usage** section documenting the `--area-code` and `--country` flags.
-  - [ ] Explicitly state that `--country` requires an **ISO 3166-1 alpha-2** code (2-letter, e.g. `AU`, `US`, `GB`) — alpha-3 codes (`AUS`) are not accepted.
-  - [ ] Include a usage example showing `--area-code 2153 --country AU` and the expected output.
-  - [ ] Include a stdin pipe example: `echo "2153 AU" | weather_cli`.
+- [x] **Step 13.1** — Extend `GeocodingService::Search` signature:
+  - [x] Add `const std::string& country_code = ""` default parameter to `Search` in `src/service/geocoding_service.hpp`.
+  - [x] Append `&countryCode=<code>` to the URL in `geocoding_service.cpp` when `country_code` is non-empty.
+  - [x] Existing `LocationController` call (no country code) is unaffected via default arg.
+- [x] **Step 13.2** — Wire geocoding into headless CLI path in `main.cpp`:
+  - [x] Add `#include "service/geocoding_service.hpp"` to `main.cpp`.
+  - [x] Replace the echo stub (`std::cout << "Area Code: ..."`) with a real synchronous `GeocodingService::Search(area_code, country)` call.
+  - [x] Print resolved `LocationMatch` fields (name, region, country, latitude, longitude) to stdout.
+  - [x] Print an error to stderr and return `EXIT_FAILURE` when no results are found.
+- [x] **Step 13.3** — Build and manual test:
+  - [x] `./weather_cli --area-code 2153 --country AU` → Baulkham Hills, NSW, Australia.
+  - [x] `./weather_cli --area-code 90210 --country US` → Beverly Hills, California.
+  - [x] `./weather_cli --area-code 99999 --country ZZ` → error + exit code 1.
+  - [x] `echo "2153 AU" | ./weather_cli` → same Baulkham Hills output (stdin pipe path covered by same fix).
+  - [x] `./weather_cli` (no args) → TUI launches normally (regression check).
+- [x] **Step 13.4** — Update `README.md`:
+  - [x] Add a **CLI Usage** section documenting the `--area-code` and `--country` flags.
+  - [x] Explicitly state that `--country` requires an **ISO 3166-1 alpha-2** code (2-letter, e.g. `AU`, `US`, `GB`) — alpha-3 codes (`AUS`) are not accepted.
+  - [x] Include a usage example showing `--area-code 2153 --country AU` and the expected output.
+  - [x] Include a stdin pipe example: `echo "2153 AU" | weather_cli`.
 
 **Files changed:** `geocoding_service.hpp`, `geocoding_service.cpp`, `main.cpp`, `README.md` — no new files, no CMake changes.
 
@@ -401,19 +401,52 @@ Resolved location:
 
 ---
 
-### Phase 14 — Service & Model Layer Setup (Forecast API Integration)
+### Phase 14 — Postcode Geocoding Fallback Integration (Zippopotam.us) ✅ Done
+Because the Open-Meteo Geocoding API does not consistently map postcodes (especially outside Europe/US like Australia), we will integrate `api.zippopotam.us` as a fallback for strictly numeric query strings when a country code is provided.
+
+- [x] **Step 14.1** — Implement Query Type Detection:
+  - [x] Add a helper utility (e.g. `is_numeric()`) in `src/service/geocoding_service.cpp` to determine if a search query string contains only digits.
+- [x] **Step 14.2** — Implement Zippopotam.us API Integration:
+  - [x] If the query is purely numeric AND the `country_code` is provided, route the `HttpClient::Fetch` call to `https://api.zippopotam.us/{country_code}/{query}` (ensuring country code is properly lowercased/formatted).
+  - [x] Otherwise, route to the existing Open-Meteo API.
+- [x] **Step 14.3** — Implement Zippopotam.us JSON Parsing:
+  - [x] Create a new private parser method `ParseZippopotamResponse(const std::string& json_str)` inside `GeocodingService` to handle the different JSON structure.
+  - [x] Map the Zippopotam keys `{"place name", "state", "country abbreviation", "latitude", "longitude"}` to our `LocationMatch` struct.
+  - [x] Update `GeocodingService::Search` to return the results from this parser if Zippopotam was queried.
+  - [x] If the Zippopotam fetch fails (e.g., 404 Not Found), fail gracefully by returning an empty vector.
+- [x] **Step 14.4** — Update Tests:
+  - [x] Add a Catch2 test case in `tests/service/test_geocoding_service.cpp` to verify parsing of a mock Zippopotam.us JSON response.
+  - [x] Run `./build/run_tests` to verify parsing correctness.
+- [x] **Step 14.5** — Manual Verification:
+  - [x] Re-run `./build/weather_cli --area-code 2153 --country AU` and confirm it prints `Baulkham Hills, New South Wales, AU` (or similar).
+
+### Phase 15 — CLI City Name Geocoding Lookup ✅ Done
+Add support for searching by city name via the CLI using a new `--city` flag (e.g., `./weather_cli --city "Baulkham Hills" --country AU`).
+
+- [x] **Step 15.1** — Update CLI Argument Parsing in `main.cpp`:
+  - [x] Add support for parsing the `--city` argument.
+  - [x] Consolidate the CLI logic so that either `--city` or `--area-code` supplies the search query to `GeocodingService::Search(query, country)`.
+  - [x] Update error outputs to reflect whether the user searched for a city or an area code.
+- [x] **Step 15.2** — Build and Manual Test:
+  - [x] Test `./build/weather_cli --city "Baulkham Hills" --country AU` → Baulkham Hills, NSW, Australia.
+  - [x] Test `./build/weather_cli --city "London" --country GB` → London, England, UK.
+- [x] **Step 15.3** — Update `README.md`:
+  - [x] Document the new `--city` flag in the CLI Usage section.
+  - [x] Provide an example using the `--city` flag with a multi-word city name wrapped in quotes.
+
+### Phase 16 — Service & Model Layer Setup (Forecast API Integration)
 - [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
 - [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
 - [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
 - [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
 - [ ] Fully integrate the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 15 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+### Phase 17 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 
-### Phase 16 — System Integration & Verification
+### Phase 18 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.

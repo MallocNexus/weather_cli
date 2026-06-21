@@ -17,14 +17,16 @@
 #include "controller/location_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
+#include "service/geocoding_service.hpp"
 #include "view/app.hpp"
 #include "util/constants.hpp"
 
 int main(int argc, char* argv[]) {
     using namespace weather_cli;
 
-    std::string area_code = "";
+    std::string query = "";
     std::string country = "";
+    bool is_city = false;
 
     // Scenario 1 & 2: Headless arguments or Pipe/Stdin input handling
     if (argc >= 2 || !isatty(STDIN_FILENO)) {
@@ -32,21 +34,38 @@ int main(int argc, char* argv[]) {
             std::string line;
             if (std::getline(std::cin, line)) {
                 std::stringstream ss(line);
-                ss >> area_code >> country;
+                ss >> query >> country;
             }
         } else {
             for (int i = 1; i < argc; ++i) {
                 std::string arg = argv[i];
-                if (arg == "--area-code" && i + 1 < argc) {
-                    area_code = argv[++i];
+                if ((arg == "--area-code" || arg == "--city") && i + 1 < argc) {
+                    query = argv[++i];
+                    if (arg == "--city") {
+                        is_city = true;
+                    }
                 } else if (arg == "--country" && i + 1 < argc) {
                     country = argv[++i];
                 }
             }
         }
 
-        if (!area_code.empty()) {
-            std::cout << "Area Code: " << area_code << ", Country: " << country << "\n";
+        if (!query.empty()) {
+            auto matches = GeocodingService::Search(query, country);
+            if (matches.empty()) {
+                std::cerr << "Error: No location found for " << (is_city ? "city" : "area code") << " '" << query << "'";
+                if (!country.empty()) std::cerr << " and country '" << country << "'";
+                std::cerr << ".\n";
+                return EXIT_FAILURE;
+            }
+
+            const auto& loc = matches.front();
+            std::cout << "Resolved location:\n"
+                      << "  City:    " << loc.name << "\n"
+                      << "  Region:  " << loc.region << "\n"
+                      << "  Country: " << loc.country << "\n"
+                      << "  Lat:     " << loc.latitude << "\n"
+                      << "  Lon:     " << loc.longitude << "\n";
             return EXIT_SUCCESS;
         }
     }

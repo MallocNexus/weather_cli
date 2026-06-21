@@ -7,10 +7,11 @@
 namespace weather_cli {
 
 class LocationController;
+class AboutController;
 
 class AppController {
 public:
-    AppController(AppState& state, LocationController& location_controller, std::function<void()> on_quit);
+    AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, std::function<void()> on_quit);
 
     // Coordinate actions triggered by the TUI View
     void ToggleUnits();
@@ -25,12 +26,19 @@ public:
     bool IsSearchModalOpen() const;
     void SelectPresetLocation(int index);
 
+    void OpenAbout();
+    bool IsAboutModalOpen() const;
+
     LocationController& GetLocationController();
     const LocationController& GetLocationController() const;
+
+    AboutController& GetAboutController();
+    const AboutController& GetAboutController() const;
 
 private:
     AppState& state_;
     LocationController& location_controller_;
+    AboutController& about_controller_;
     std::function<void()> on_quit_;
 };
 

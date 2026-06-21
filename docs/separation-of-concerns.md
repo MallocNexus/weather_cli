@@ -14,11 +14,13 @@ graph TD
     subgraph View ["View Layer (FTXUI TUI)"]
         App["App Component (src/view/app.cpp)"]
         LocView["LocationSearchView Modal (src/view/location_search_view.cpp)"]
+        AboutView["AboutView Modal (src/view/about_view.cpp)"]
     end
 
     subgraph Controller ["Controller Layer (Pure C++)"]
         AppCtrl["AppController (src/controller/app_controller.cpp)"]
         LocCtrl["LocationController (src/controller/location_controller.cpp)"]
+        AboutCtrl["AboutController (src/controller/about_controller.cpp)"]
     end
 
     subgraph Service ["Service Layer (Infrastructure Services)"]
@@ -29,6 +31,7 @@ graph TD
     subgraph Model ["Model Layer (Entities & Sub-States)"]
         State["AppState (src/model/app_state.hpp)"]
         SearchState["LocationSearchState (src/model/location_search_state.hpp)"]
+        AboutState["AboutState (src/model/about_state.hpp)"]
     end
 
     subgraph External ["External API"]
@@ -38,9 +41,12 @@ graph TD
     %% Interactions
     App -->|"Triggers events (Refresh, Quit, etc.)"| AppCtrl
     AppCtrl -->|"Delegates / Coordinates search"| LocCtrl
+    AppCtrl -->|"Delegates about dialog"| AboutCtrl
     LocView -->|"Triggers input search queries / selection"| LocCtrl
+    AboutView -->|"Triggers dialog dismissal"| AboutCtrl
     LocCtrl -->|"Updates active coordinates"| State
     LocCtrl -->|"Updates local modal parameters"| SearchState
+    AboutCtrl -->|"Updates about visibility"| AboutState
     LocCtrl -->|"Spawns query on background thread"| Geocoding
     Geocoding -->|"GET requests via HTTP"| Http
     Http -->|"GET queries over CPR"| OpenMeteo
@@ -48,15 +54,16 @@ graph TD
     %% Data Binding (Reversed to match strict UML dependency direction)
     App -.->|"Ref data binding"| State
     LocView -.->|"Ref/Pointer data binding"| SearchState
+    AboutView -.->|"Ref/Pointer data binding"| AboutState
 
     %% Style Event Arrows Green
-    linkStyle 0,1,2 stroke:#28a745,stroke-width:2px;
+    linkStyle 0,1,2,3,4 stroke:#28a745,stroke-width:2px;
 
     %% Style All Other Flow Lines Darker Blue
-    linkStyle 3,4,5,6,7 stroke:#0056b3,stroke-width:2px;
+    linkStyle 5,6,7,8,9,10 stroke:#0056b3,stroke-width:2px;
 
     %% Style Data Binding Arrows Purple
-    linkStyle 8,9 stroke:#6f42c1,stroke-width:2px;
+    linkStyle 11,12,13 stroke:#6f42c1,stroke-width:2px;
 ```
 
 ---
@@ -64,16 +71,18 @@ graph TD
 ## 2. Separation of Concerns Breakdown
 
 ### View Layer (FTXUI TUI)
-* **Components**: [app.cpp](../src/view/app.cpp) and [location_search_view.cpp](../src/view/location_search_view.cpp).
-* **Role**: Orchestrates visual elements and coordinates TUI layout construction, borders, menus, custom temperature trend canvas, and focus transitions.
+* **Components**: [app.cpp](../src/view/app.cpp), [location_search_view.cpp](../src/view/location_search_view.cpp), and [about_view.cpp](../src/view/about_view.cpp).
+* **Role**: Orchestrates visual elements and coordinates TUI layout construction, borders, menus, custom temperature trend canvas, modals, and focus transitions.
 * **Separation Rule**: **No business logic, thread management, or network queries.** The View does not execute background threads or interact with the Geocoding API directly. Actions (like navigation clicks or typing autocomplete queries) are delegated immediately to the Controllers. The views observe data models reactively via pointer binding.
 
 ### Controller Layer (Pure C++)
 Coordinating tasks are split hierarchically between the central application coordinator (parent) and sub-controllers:
 * **AppController** ([app_controller.cpp](../src/controller/app_controller.cpp)):
-  The root controller. It coordinates main application tab selections, unit conversions (Celsius vs. Fahrenheit), slider scrub indices, presets, and the main event loop termination (Quit). It accepts a reference to `LocationController` in its constructor, delegating search events and providing access to it for child views.
+  The root controller. It coordinates main application tab selections, unit conversions (Celsius vs. Fahrenheit), slider scrub indices, presets, and the main event loop termination (Quit). It accepts references to `LocationController` and `AboutController` in its constructor, delegating modal events and providing access to them for child views.
 * **LocationController** ([location_controller.cpp](../src/controller/location_controller.cpp)):
   A child controller. It owns the lifecycle of the search dialog model (`LocationSearchState`), controls text search queries, manages asynchronous worker threads, and writes final location decisions to the global state.
+* **AboutController** ([about_controller.cpp](../src/controller/about_controller.cpp)):
+  A child controller. It manages the visibility state of the application's About/Version overlay modal.
 * **Separation Rule**: **Zero TUI/FTXUI library dependencies.** The controllers contain no terminal drawing layouts, colors, styles, screen elements, or custom key definitions. They compile and run under standard unit testing suites without any user interface dependency.
 
 ### Service Layer (Pure C++ Domain Services)
@@ -88,6 +97,8 @@ Coordinating tasks are split hierarchically between the central application coor
   Global structure containing application-wide dashboard state (latitude, longitude, active city name, temperature units, selected timeline hour index, etc.).
 * **LocationSearchState** ([location_search_state.hpp](../src/model/location_search_state.hpp)):
   Encapsulated sub-state containing transient geocoding dialog fields (active keystroke search query, matches suggestion array, loader checks, error messages, and its local synchronization mutex).
+* **AboutState** ([about_state.hpp](../src/model/about_state.hpp)):
+  Encapsulated sub-state containing the visibility flag of the About/Version overlay modal.
 * **Separation Rule**: **Pure data representations.** Models store configuration values, properties, and entity maps. They contain no event processing loops, console layouts, or network handlers.
 
 ---

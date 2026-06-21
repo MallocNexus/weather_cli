@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/about_controller.hpp"
 #include "model/app_state.hpp"
+#include "model/about_state.hpp"
 
 TEST_CASE("AppController Actions", "[controller][app]") {
     using namespace weather_cli;
@@ -11,7 +13,9 @@ TEST_CASE("AppController Actions", "[controller][app]") {
     auto on_quit = [&]() { quit_called = true; };
 
     LocationController location_controller(state, []() {});
-    AppController controller(state, location_controller, on_quit);
+    AboutState about_state;
+    AboutController about_controller(about_state, []() {});
+    AppController controller(state, location_controller, about_controller, on_quit);
 
     SECTION("Initial AppState configuration matches defaults") {
         REQUIRE(state.is_celsius);
@@ -100,5 +104,29 @@ TEST_CASE("AppController Actions", "[controller][app]") {
 
         const auto& const_controller = controller;
         REQUIRE(&const_controller.GetLocationController() == &location_controller);
+    }
+
+    SECTION("OpenAbout delegates modal state update to AboutController") {
+        auto& current_about_state = about_controller.GetAboutState();
+        REQUIRE_FALSE(current_about_state.show_about_modal);
+
+        controller.OpenAbout();
+        REQUIRE(current_about_state.show_about_modal);
+    }
+
+    SECTION("IsAboutModalOpen returns state from AboutController") {
+        auto& current_about_state = about_controller.GetAboutState();
+        current_about_state.show_about_modal = true;
+        REQUIRE(controller.IsAboutModalOpen());
+
+        current_about_state.show_about_modal = false;
+        REQUIRE_FALSE(controller.IsAboutModalOpen());
+    }
+
+    SECTION("GetAboutController returns internal controller reference") {
+        REQUIRE(&controller.GetAboutController() == &about_controller);
+
+        const auto& const_controller = controller;
+        REQUIRE(&const_controller.GetAboutController() == &about_controller);
     }
 }

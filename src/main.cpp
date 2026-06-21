@@ -11,8 +11,10 @@
 #include <ftxui/dom/elements.hpp>
 
 #include "model/app_state.hpp"
+#include "model/about_state.hpp"
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/about_controller.hpp"
 #include "view/app.hpp"
 
 int main(int argc, char* argv[]) {
@@ -63,7 +65,12 @@ int main(int argc, char* argv[]) {
             screen.PostEvent(ftxui::Event::Custom);
         });
 
-        AppController controller(state, loc_controller, screen.ExitLoopClosure());
+        AboutState about_state;
+        AboutController about_controller(about_state, [&screen] {
+            screen.PostEvent(ftxui::Event::Custom);
+        });
+
+        AppController controller(state, loc_controller, about_controller, screen.ExitLoopClosure());
 
         App app(state, controller);
 

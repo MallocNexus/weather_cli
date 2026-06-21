@@ -6,6 +6,7 @@
 
 #include "controller/app_controller.hpp"
 #include "model/app_state.hpp"
+#include "view/about_view.hpp"
 #include "view/location_search_view.hpp"
 
 namespace weather_cli {
@@ -19,6 +20,7 @@ class App {
     AppState& state_;
     AppController& controller_;
     LocationSearchView location_search_view_;
+    AboutView about_view_;
     ftxui::Component main_renderer_;
 
     // Menu configurations
@@ -34,7 +36,7 @@ class App {
     std::vector<std::string> units_entries_ = {"Celsius (°C)", "Fahrenheit (°F)"};
     int units_selected_ = 0;
 
-    std::vector<std::string> help_entries_ = {"Version", "Shortcuts"};
+    std::vector<std::string> help_entries_ = {"About", "Shortcuts"};
     int help_selected_ = 0;
 
     // View tab selection (Temperature vs Rain graph tab selectors)
@@ -45,6 +47,5 @@ class App {
     // Root layout selector tab index
     int root_tab_selected_ = 0;
 };
-
 
 }  // namespace weather_cli

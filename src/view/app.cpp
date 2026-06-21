@@ -14,7 +14,8 @@ namespace weather_cli {
 
 App::App(AppState& state, AppController& controller)
     : state_(state), controller_(controller),
-      location_search_view_(controller.GetLocationController()) {
+      location_search_view_(controller.GetLocationController()),
+      about_view_(controller.GetAboutController()) {
 
     // 1. Top animated navigation tab bar
     auto top_menu = Menu(&top_menu_entries_, &top_menu_selected_, MenuOption::HorizontalAnimated());
@@ -56,7 +57,9 @@ App::App(AppState& state, AppController& controller)
 
     MenuOption help_option = MenuOption::HorizontalAnimated();
     help_option.on_enter = [this] {
-        // Modals trigger stubs
+        if (help_selected_ == 0) {
+            controller_.OpenAbout();
+        }
     };
     auto help_menu = Menu(&help_entries_, &help_selected_, help_option);
 
@@ -80,15 +83,22 @@ App::App(AppState& state, AppController& controller)
     });
 
     auto root_container = Container::Tab(
-        {main_container, location_search_view_.GetComponent()},
+        {main_container, location_search_view_.GetComponent(), about_view_.GetComponent()},
         &root_tab_selected_
     );
 
     main_renderer_ = Renderer(root_container, [&, top_menu, tab_container, graph_tabs, timeline_slider] {
-        // Fetch show_search_modal state under mutex to coordinate active tab
+        // Fetch show_search_modal and show_about_modal state to coordinate active tab
         bool show_search_modal = controller_.IsSearchModalOpen();
+        bool show_about_modal = controller_.IsAboutModalOpen();
 
-        root_tab_selected_ = show_search_modal ? 1 : 0;
+        if (show_search_modal) {
+            root_tab_selected_ = 1;
+        } else if (show_about_modal) {
+            root_tab_selected_ = 2;
+        } else {
+            root_tab_selected_ = 0;
+        }
 
         double current_temp = 18.5;
         double max_temp = 21.0;
@@ -182,8 +192,9 @@ App::App(AppState& state, AppController& controller)
             }) | border
         });
 
-        // Layer the modal search view if active
+        // Layer the modal search and about views if active
         document = location_search_view_.Render(document);
+        document = about_view_.Render(document);
 
         return document;
     });

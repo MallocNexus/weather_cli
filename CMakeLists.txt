@@ -75,6 +75,7 @@ target_link_libraries(weather_lib PUBLIC
 add_library(controller_lib STATIC 
     src/controller/app_controller.cpp
     src/controller/location_controller.cpp
+    src/controller/about_controller.cpp
 )
 target_include_directories(controller_lib PUBLIC src/)
 target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
@@ -85,6 +86,7 @@ target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
 add_library(app_lib STATIC
     src/view/app.cpp
     src/view/location_search_view.cpp
+    src/view/about_view.cpp
 )
 target_include_directories(app_lib PUBLIC src/)
 target_link_libraries(app_lib PUBLIC
@@ -109,6 +111,7 @@ add_executable(run_tests
     tests/service/test_geocoding_service.cpp
     tests/controller/test_location_controller.cpp
     tests/controller/test_app_controller.cpp
+    tests/controller/test_about_controller.cpp
     tests/util/test_formatting.cpp
     tests/view/test_app.cpp
 )

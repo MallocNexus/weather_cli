@@ -1,11 +1,12 @@
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/about_controller.hpp"
 #include <mutex>
 
 namespace weather_cli {
 
-AppController::AppController(AppState& state, LocationController& location_controller, std::function<void()> on_quit)
-    : state_(state), location_controller_(location_controller), on_quit_(on_quit) {}
+AppController::AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, std::function<void()> on_quit)
+    : state_(state), location_controller_(location_controller), about_controller_(about_controller), on_quit_(on_quit) {}
 
 void AppController::ToggleUnits() {
     state_.is_celsius = !state_.is_celsius;
@@ -61,6 +62,22 @@ LocationController& AppController::GetLocationController() {
 
 const LocationController& AppController::GetLocationController() const {
     return location_controller_;
+}
+
+void AppController::OpenAbout() {
+    about_controller_.OpenAbout();
+}
+
+bool AppController::IsAboutModalOpen() const {
+    return about_controller_.GetAboutState().show_about_modal;
+}
+
+AboutController& AppController::GetAboutController() {
+    return about_controller_;
+}
+
+const AboutController& AppController::GetAboutController() const {
+    return about_controller_;
 }
 
 }  // namespace weather_cli

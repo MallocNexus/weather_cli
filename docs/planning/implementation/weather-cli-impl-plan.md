@@ -282,31 +282,34 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 ### Phase 8 — Architectural Separation of Concerns Documentation ✅ Done
 - [x] Create `docs/separation-of-concerns.md` detailing the architectural layers of the `weather-cli` application, including a Mermaid interaction diagram, detailed layer boundaries, sub-controller flows, state structures, and design style guidelines.
 
-### Phase 9 — Hierarchical MVC Refactor & Missing Test Cases Coverage
-- [ ] Refactor `AppController` in `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp` to take `LocationController&` in its constructor, add an `OpenSearch()` delegation method, and expose a getter to retrieve `LocationController`.
-- [ ] Refactor `App` in `src/view/app.hpp` and `src/view/app.cpp` to remove its dependency on `LocationController` (only takes `AppController&` and `AppState&`).
-- [ ] Update `App` to initialize `location_search_view_` using `controller.GetLocationController()`.
-- [ ] Route Locations menu triggers and modal visibility checks in `src/view/app.cpp` through `AppController`.
-- [ ] Update object construction wiring in `src/main.cpp` to initialize controllers hierarchically.
-- [ ] Create `tests/util/test_formatting.cpp` to verify temperature converters (Celsius/Fahrenheit) and time format utility methods.
-- [ ] Create `tests/controller/test_app_controller.cpp` to verify `AppController` units toggle state, tab shifts, timeline slider index updates, and coordination/delegation to `LocationController`.
-- [ ] Create `tests/view/test_app.cpp` to verify root View components initialize correctly, root tab defaults, and components getters behave gracefully without throwing exceptions.
-- [ ] Update `CMakeLists.txt` to compile all new test source files (`test_formatting.cpp`, `test_app_controller.cpp`, `test_app.cpp`) in `run_tests`.
-- [ ] Update the `docs/separation-of-concerns.md` document diagrams to reflect the strict 1-to-1 View-to-Controller bindings.
+### Phase 9 — Hierarchical MVC Refactor & Missing Test Cases Coverage ✅ Done
+- [x] Refactor `AppController` in `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp` to take `LocationController&` in its constructor, add an `OpenSearch()` delegation method, and expose a getter to retrieve `LocationController`.
+- [x] Refactor `App` in `src/view/app.hpp` and `src/view/app.cpp` to remove its dependency on `LocationController` (only takes `AppController&` and `AppState&`).
+- [x] Update `App` to initialize `location_search_view_` using `controller.GetLocationController()`.
+- [x] Route Locations menu triggers and modal visibility checks in `src/view/app.cpp` through `AppController`.
+- [x] Update object construction wiring in `src/main.cpp` to initialize controllers hierarchically.
+- [x] Create `tests/util/test_formatting.cpp` to verify temperature converters (Celsius/Fahrenheit) and time format utility methods.
+- [x] Create `tests/controller/test_app_controller.cpp` to verify `AppController` units toggle state, tab shifts, timeline slider index updates, and coordination/delegation to `LocationController`.
+- [x] Create `tests/view/test_app.cpp` to verify root View components initialize correctly, root tab defaults, and components getters behave gracefully without throwing exceptions.
+- [x] Update `CMakeLists.txt` to compile all new test source files (`test_formatting.cpp`, `test_app_controller.cpp`, `test_app.cpp`) in `run_tests`.
+- [x] Update the `docs/separation-of-concerns.md` document diagrams to reflect the strict 1-to-1 View-to-Controller bindings.
 
-### Phase 10 — Service & Model Layer Setup (Forecast API Integration)
+  - [ ] Register all new source files in `CMakeLists.txt` (compiling `about_controller.cpp` and `about_view.cpp` into libraries, and `test_about_controller.cpp` in `run_tests`).
+  - [ ] Update [docs/separation-of-concerns.md](file:///Users/mattswart/Source/CPP/weather-cli/docs/separation-of-concerns.md) to integrate the About view/controller components into MVC diagrams.
+
+### Phase 11 — Service & Model Layer Setup (Forecast API Integration)
 - [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
 - [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
 - [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
 - [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
 - [ ] Fully integrate the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 11 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+### Phase 12 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 
-### Phase 12 — System Integration & Verification
+### Phase 13 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.

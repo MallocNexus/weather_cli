@@ -5,6 +5,9 @@
 #include "model/app_state.hpp"
 #include "model/about_state.hpp"
 
+#include "controller/db_controller.hpp"
+#include "model/location_repository.hpp"
+
 TEST_CASE("AppController Actions", "[controller][app]") {
     using namespace weather_cli;
 
@@ -12,10 +15,13 @@ TEST_CASE("AppController Actions", "[controller][app]") {
     bool quit_called = false;
     auto on_quit = [&]() { quit_called = true; };
 
-    LocationController location_controller(state, []() {});
+    LocationRepository repo(":memory:");
+    repo.Initialize();
+    DatabaseController db_controller(repo, []() {});
+    LocationController location_controller(state, db_controller, []() {});
     AboutState about_state;
     AboutController about_controller(about_state, []() {});
-    AppController controller(state, location_controller, about_controller, on_quit);
+    AppController controller(state, location_controller, about_controller, db_controller, on_quit);
 
     SECTION("Initial AppState configuration matches defaults") {
         REQUIRE(state.is_celsius);
@@ -128,5 +134,22 @@ TEST_CASE("AppController Actions", "[controller][app]") {
 
         const auto& const_controller = controller;
         REQUIRE(&const_controller.GetAboutController() == &about_controller);
+    }
+
+    SECTION("SelectSavedLocation updates coordinates if index exists") {
+        LocationMatch loc{"Rome", "Italy", "Lazio", 41.9028, 12.4964};
+        repo.SaveLocation(loc);
+
+        controller.SelectSavedLocation(0);
+        REQUIRE(state.city_name == "Rome");
+        REQUIRE(state.latitude == 41.9028);
+        REQUIRE(state.longitude == 12.4964);
+    }
+
+    SECTION("GetDatabaseController returns internal controller reference") {
+        REQUIRE(&controller.GetDatabaseController() == &db_controller);
+
+        const auto& const_controller = controller;
+        REQUIRE(&const_controller.GetDatabaseController() == &db_controller);
     }
 }

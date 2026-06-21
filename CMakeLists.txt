@@ -58,6 +58,7 @@ target_include_directories(util_lib PUBLIC src/)
 # Layer 1: Model & Services (Geocoding implementation)
 # ---------------------------------------------------------------------------
 add_library(weather_lib STATIC
+    src/model/location_repository.cpp
     src/service/http_client.cpp
     src/service/geocoding_service.cpp
 )
@@ -76,6 +77,7 @@ add_library(controller_lib STATIC
     src/controller/app_controller.cpp
     src/controller/location_controller.cpp
     src/controller/about_controller.cpp
+    src/controller/db_controller.cpp
 )
 target_include_directories(controller_lib PUBLIC src/)
 target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
@@ -112,6 +114,7 @@ add_executable(run_tests
     tests/controller/test_location_controller.cpp
     tests/controller/test_app_controller.cpp
     tests/controller/test_about_controller.cpp
+    tests/controller/test_db_controller.cpp
     tests/util/test_formatting.cpp
     tests/view/test_app.cpp
 )

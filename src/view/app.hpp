@@ -30,7 +30,7 @@ class App {
     std::vector<std::string> app_entries_ = {"Refresh", "Quit"};
     int app_selected_ = 0;
 
-    std::vector<std::string> locations_entries_ = {"Search Location", "Sydney, AU", "New York, US"};
+    std::vector<std::string> locations_entries_ = {"Search Location"};
     int locations_selected_ = 0;
 
     std::vector<std::string> units_entries_ = {"Celsius (°C)", "Fahrenheit (°F)"};

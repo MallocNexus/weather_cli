@@ -16,6 +16,7 @@ struct LocationMatch {
 
 struct LocationSearchState {
     bool show_search_modal = false;
+    bool save_to_db = false;
     std::string search_query = "";
     std::vector<LocationMatch> search_suggestions;
     int selected_suggestion_index = 0;

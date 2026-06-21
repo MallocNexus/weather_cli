@@ -21,6 +21,7 @@ graph TD
         AppCtrl["AppController (src/controller/app_controller.cpp)"]
         LocCtrl["LocationController (src/controller/location_controller.cpp)"]
         AboutCtrl["AboutController (src/controller/about_controller.cpp)"]
+        DbCtrl["DatabaseController (src/controller/db_controller.cpp)"]
     end
 
     subgraph Service ["Service Layer (Infrastructure Services)"]
@@ -32,6 +33,11 @@ graph TD
         State["AppState (src/model/app_state.hpp)"]
         SearchState["LocationSearchState (src/model/location_search_state.hpp)"]
         AboutState["AboutState (src/model/about_state.hpp)"]
+        Repo["LocationRepository (src/model/location_repository.hpp)"]
+    end
+
+    subgraph Storage ["Local Storage"]
+        Sqlite["SQLite Database (weather_cache.db)"]
     end
 
     subgraph External ["External API"]
@@ -42,28 +48,33 @@ graph TD
     App -->|"Triggers events (Refresh, Quit, etc.)"| AppCtrl
     AppCtrl -->|"Delegates / Coordinates search"| LocCtrl
     AppCtrl -->|"Delegates about dialog"| AboutCtrl
+    AppCtrl -->|"Delegates saved location selection"| DbCtrl
     LocView -->|"Triggers input search queries / selection"| LocCtrl
     AboutView -->|"Triggers dialog dismissal"| AboutCtrl
+    LocCtrl -->|"Saves favorited locations"| DbCtrl
     LocCtrl -->|"Updates active coordinates"| State
     LocCtrl -->|"Updates local modal parameters"| SearchState
     AboutCtrl -->|"Updates about visibility"| AboutState
     LocCtrl -->|"Spawns query on background thread"| Geocoding
     Geocoding -->|"GET requests via HTTP"| Http
     Http -->|"GET queries over CPR"| OpenMeteo
+    DbCtrl -->|"Initializes & queries/saves"| Sqlite
+    DbCtrl -->|"Loads / populates"| Repo
 
     %% Data Binding (Reversed to match strict UML dependency direction)
     App -.->|"Ref data binding"| State
     LocView -.->|"Ref/Pointer data binding"| SearchState
     AboutView -.->|"Ref/Pointer data binding"| AboutState
+    App -.->|"Ref/Pointer data binding"| Repo
 
     %% Style Event Arrows Green
-    linkStyle 0,1,2,3,4 stroke:#28a745,stroke-width:2px;
+    linkStyle 0,1,2,3,4,5,6 stroke:#28a745,stroke-width:2px;
 
     %% Style All Other Flow Lines Darker Blue
-    linkStyle 5,6,7,8,9,10 stroke:#0056b3,stroke-width:2px;
+    linkStyle 7,8,9,10,11,12,13,14 stroke:#0056b3,stroke-width:2px;
 
     %% Style Data Binding Arrows Purple
-    linkStyle 11,12,13 stroke:#6f42c1,stroke-width:2px;
+    linkStyle 15,16,17,18 stroke:#6f42c1,stroke-width:2px;
 ```
 
 ---
@@ -78,11 +89,13 @@ graph TD
 ### Controller Layer (Pure C++)
 Coordinating tasks are split hierarchically between the central application coordinator (parent) and sub-controllers:
 * **AppController** ([app_controller.cpp](../src/controller/app_controller.cpp)):
-  The root controller. It coordinates main application tab selections, unit conversions (Celsius vs. Fahrenheit), slider scrub indices, presets, and the main event loop termination (Quit). It accepts references to `LocationController` and `AboutController` in its constructor, delegating modal events and providing access to them for child views.
+  The root controller. It coordinates main application tab selections, unit conversions (Celsius vs. Fahrenheit), slider scrub indices, presets, and the main event loop termination (Quit). It accepts references to `LocationController`, `AboutController`, and `DatabaseController` in its constructor, delegating modal events and providing access to them for child views.
 * **LocationController** ([location_controller.cpp](../src/controller/location_controller.cpp)):
-  A child controller. It owns the lifecycle of the search dialog model (`LocationSearchState`), controls text search queries, manages asynchronous worker threads, and writes final location decisions to the global state.
+  A child controller. It owns the lifecycle of the search dialog model (`LocationSearchState`), controls text search queries, manages asynchronous worker threads, and writes final location decisions to the global state (and optional database saves).
 * **AboutController** ([about_controller.cpp](../src/controller/about_controller.cpp)):
   A child controller. It manages the visibility state of the application's About/Version overlay modal.
+* **DatabaseController** ([db_controller.cpp](../src/controller/db_controller.cpp)):
+  A child controller. It coordinates database-related operations by delegating table initialization, loading, and saving actions to the `LocationRepository` model, and triggering view redraws on success.
 * **Separation Rule**: **Zero TUI/FTXUI library dependencies.** The controllers contain no terminal drawing layouts, colors, styles, screen elements, or custom key definitions. They compile and run under standard unit testing suites without any user interface dependency.
 
 ### Service Layer (Pure C++ Domain Services)
@@ -99,6 +112,8 @@ Coordinating tasks are split hierarchically between the central application coor
   Encapsulated sub-state containing transient geocoding dialog fields (active keystroke search query, matches suggestion array, loader checks, error messages, and its local synchronization mutex).
 * **AboutState** ([about_state.hpp](../src/model/about_state.hpp)):
   Encapsulated sub-state containing the visibility flag of the About/Version overlay modal.
+* **LocationRepository** ([location_repository.hpp](../src/model/location_repository.hpp)):
+  Database-backed model repository. It encapsulates the SQLite connection handle (`sqlite3* db_`), table initialization, SQL string definitions, query execution, and maintains the in-memory cache of favorite locations.
 * **Separation Rule**: **Pure data representations.** Models store configuration values, properties, and entity maps. They contain no event processing loops, console layouts, or network handlers.
 
 ---
@@ -118,14 +133,16 @@ graph TD
     SearchState["LocationSearchState (src/model/location_search_state.hpp)"]
     AppState["AppState (src/model/app_state.hpp)"]
     Geocoding["GeocodingService (src/service/geocoding_service.cpp)"]
+    DbCtrl["DatabaseController (src/controller/db_controller.cpp)"]
 
     LocView -->|"Triggers Search / Open / Cancel"| LocCtrl
     LocCtrl -->|"Updates local modal parameters"| SearchState
     LocCtrl -->|"Spawns background thread query"| Geocoding
     LocCtrl -->|"Writes final coordinates (on Select)"| AppState
+    LocCtrl -->|"Saves favorited locations"| DbCtrl
 
     %% Style Event Green
-    linkStyle 0 stroke:#28a745,stroke-width:2px;
+    linkStyle 0,4 stroke:#28a745,stroke-width:2px;
 
     %% Style Other Flow Lines Darker Blue
     linkStyle 1,2,3 stroke:#0056b3,stroke-width:2px;

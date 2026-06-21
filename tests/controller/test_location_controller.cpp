@@ -1,5 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "controller/location_controller.hpp"
+#include "controller/db_controller.hpp"
+#include "model/location_repository.hpp"
 #include <chrono>
 #include <thread>
 
@@ -10,7 +12,10 @@ TEST_CASE("LocationController Actions", "[controller][location]") {
     bool redraw_triggered = false;
     auto trigger_redraw = [&]() { redraw_triggered = true; };
 
-    LocationController controller(app_state, trigger_redraw);
+    LocationRepository repo(":memory:");
+    repo.Initialize();
+    DatabaseController db_controller(repo, []() {});
+    LocationController controller(app_state, db_controller, trigger_redraw);
     auto& search_state = controller.GetSearchState();
 
     SECTION("Initial state is clean") {

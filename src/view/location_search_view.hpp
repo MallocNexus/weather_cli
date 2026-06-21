@@ -24,6 +24,7 @@ private:
     std::vector<std::string> suggestion_entries_;
     ftxui::Component search_input_;
     ftxui::Component suggestions_menu_;
+    ftxui::Component save_checkbox_;
     ftxui::Component view_component_;
     bool last_show_search_modal_ = false;
 };

@@ -29,10 +29,14 @@ LocationSearchView::LocationSearchView(LocationController& controller)
     };
     suggestions_menu_ = Menu(&suggestion_entries_, &search_state.selected_suggestion_index, suggestions_option);
 
+    // 3. Save checkbox option
+    save_checkbox_ = Checkbox("Save location to database", &search_state.save_to_db);
+
     // Layout focus containment
     auto search_container = Container::Vertical({
         search_input_,
-        suggestions_menu_
+        suggestions_menu_,
+        save_checkbox_
     });
 
     // Intercept Escape to close modal, and Enter to shift focus to suggestions
@@ -114,13 +118,15 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             text("Enter city name and press Enter to query:") | dim,
             search_input_->Render() | border,
             separator(),
+            save_checkbox_->Render() | border,
+            separator(),
             text("Matching Cities:") | bold,
             suggestions_box | size(HEIGHT, GREATER_THAN, 5) | border,
             separator(),
             hbox({
                 text("[Esc] Cancel") | dim,
                 filler(),
-                text("[Enter] Search / Select") | dim
+                text("[Enter] Search / Select / Toggle") | dim
             })
         }) | size(WIDTH, EQUAL, 60) | border | color(Color::Cyan) | clear_under | center;
 

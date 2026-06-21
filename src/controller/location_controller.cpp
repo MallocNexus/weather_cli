@@ -1,12 +1,13 @@
 #include "controller/location_controller.hpp"
+#include "controller/db_controller.hpp"
 #include "service/geocoding_service.hpp"
 #include <thread>
 #include <mutex>
 
 namespace weather_cli {
 
-LocationController::LocationController(AppState& app_state, std::function<void()> trigger_redraw)
-    : app_state_(app_state), trigger_redraw_(trigger_redraw), current_search_id_(0) {}
+LocationController::LocationController(AppState& app_state, DatabaseController& db_controller, std::function<void()> trigger_redraw)
+    : app_state_(app_state), db_controller_(db_controller), trigger_redraw_(trigger_redraw), current_search_id_(0) {}
 
 void LocationController::Search(const std::string& query) {
     {
@@ -73,8 +74,13 @@ void LocationController::SelectSuggestion(int index) {
         app_state_.latitude = match.latitude;
         app_state_.longitude = match.longitude;
 
+        if (search_state_.save_to_db) {
+            db_controller_.SaveLocation(match);
+        }
+
         // Reset query modal parameters
         search_state_.show_search_modal = false;
+        search_state_.save_to_db = false;
         search_state_.search_query = "";
         search_state_.search_suggestions.clear();
         search_state_.selected_suggestion_index = 0;
@@ -90,6 +96,7 @@ void LocationController::SelectSuggestion(int index) {
 void LocationController::CancelSearch() {
     std::lock_guard<std::mutex> lock(search_state_.mutex);
     search_state_.show_search_modal = false;
+    search_state_.save_to_db = false;
     search_state_.search_query = "";
     search_state_.search_suggestions.clear();
     search_state_.selected_suggestion_index = 0;
@@ -104,6 +111,7 @@ void LocationController::CancelSearch() {
 void LocationController::OpenSearch() {
     std::lock_guard<std::mutex> lock(search_state_.mutex);
     search_state_.show_search_modal = true;
+    search_state_.save_to_db = false;
     search_state_.search_query = "";
     search_state_.search_suggestions.clear();
     search_state_.selected_suggestion_index = 0;

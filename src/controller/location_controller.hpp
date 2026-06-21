@@ -8,9 +8,11 @@
 
 namespace weather_cli {
 
+class DatabaseController;
+
 class LocationController {
 public:
-    LocationController(AppState& app_state, std::function<void()> trigger_redraw);
+    LocationController(AppState& app_state, DatabaseController& db_controller, std::function<void()> trigger_redraw);
 
     // Invokes background thread GeocodingService calls
     void Search(const std::string& query);
@@ -30,6 +32,7 @@ public:
 
 private:
     AppState& app_state_;
+    DatabaseController& db_controller_;
     std::function<void()> trigger_redraw_;
     LocationSearchState search_state_;
     std::atomic<uint64_t> current_search_id_{0};

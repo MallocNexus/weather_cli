@@ -1,12 +1,13 @@
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
 #include "controller/about_controller.hpp"
+#include "controller/db_controller.hpp"
 #include <mutex>
 
 namespace weather_cli {
 
-AppController::AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, std::function<void()> on_quit)
-    : state_(state), location_controller_(location_controller), about_controller_(about_controller), on_quit_(on_quit) {}
+AppController::AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, DatabaseController& db_controller, std::function<void()> on_quit)
+    : state_(state), location_controller_(location_controller), about_controller_(about_controller), db_controller_(db_controller), on_quit_(on_quit) {}
 
 void AppController::ToggleUnits() {
     state_.is_celsius = !state_.is_celsius;
@@ -78,6 +79,25 @@ AboutController& AppController::GetAboutController() {
 
 const AboutController& AppController::GetAboutController() const {
     return about_controller_;
+}
+
+void AppController::SelectSavedLocation(int saved_index) {
+    const auto& repo = db_controller_.GetRepository();
+    const auto& saved_locs = repo.GetSavedLocations();
+    if (saved_index >= 0 && saved_index < static_cast<int>(saved_locs.size())) {
+        const auto& loc = saved_locs[saved_index];
+        state_.latitude = loc.latitude;
+        state_.longitude = loc.longitude;
+        SearchCity(loc.name);
+    }
+}
+
+DatabaseController& AppController::GetDatabaseController() {
+    return db_controller_;
+}
+
+const DatabaseController& AppController::GetDatabaseController() const {
+    return db_controller_;
 }
 
 }  // namespace weather_cli

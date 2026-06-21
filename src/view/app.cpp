@@ -7,6 +7,7 @@
 #include "util/formatting.hpp"
 #include "util/constants.hpp"
 #include "view/icons/weather_icons.hpp"
+#include "controller/db_controller.hpp"
 
 using namespace ftxui;
 
@@ -35,10 +36,8 @@ App::App(AppState& state, AppController& controller)
     locations_option.on_enter = [this] {
         if (locations_selected_ == 0) {
             controller_.OpenSearch();
-        } else if (locations_selected_ == 1) {
-            controller_.SelectPresetLocation(1);
-        } else if (locations_selected_ == 2) {
-            controller_.SelectPresetLocation(2);
+        } else {
+            controller_.SelectSavedLocation(locations_selected_ - 1);
         }
     };
     auto locations_menu = Menu(&locations_entries_, &locations_selected_, locations_option);
@@ -88,6 +87,19 @@ App::App(AppState& state, AppController& controller)
     );
 
     main_renderer_ = Renderer(root_container, [&, top_menu, tab_container, graph_tabs, timeline_slider] {
+        // Rebuild locations menu items dynamically from database repository favorites
+        const auto& saved_locs = controller_.GetDatabaseController().GetRepository().GetSavedLocations();
+        if (locations_entries_.size() != saved_locs.size() + 1) {
+            locations_entries_ = {"Search Location"};
+            for (const auto& loc : saved_locs) {
+                std::string label = loc.name;
+                if (!loc.country.empty()) {
+                    label += " (" + loc.country + ")";
+                }
+                locations_entries_.push_back(label);
+            }
+        }
+
         // Fetch show_search_modal and show_about_modal state to coordinate active tab
         bool show_search_modal = controller_.IsSearchModalOpen();
         bool show_about_modal = controller_.IsAboutModalOpen();

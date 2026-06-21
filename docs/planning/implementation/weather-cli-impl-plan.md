@@ -294,22 +294,59 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 - [x] Update `CMakeLists.txt` to compile all new test source files (`test_formatting.cpp`, `test_app_controller.cpp`, `test_app.cpp`) in `run_tests`.
 - [x] Update the `docs/separation-of-concerns.md` document diagrams to reflect the strict 1-to-1 View-to-Controller bindings.
 
-  - [ ] Register all new source files in `CMakeLists.txt` (compiling `about_controller.cpp` and `about_view.cpp` into libraries, and `test_about_controller.cpp` in `run_tests`).
-  - [ ] Update [docs/separation-of-concerns.md](file:///Users/mattswart/Source/CPP/weather-cli/docs/separation-of-concerns.md) to integrate the About view/controller components into MVC diagrams.
+### Phase 10 — App Version and Standalone About/Version Modal View ✅ Done
+- [x] Add version and app name constants to `constants.hpp`.
+- [x] Create standalone `AboutState`, `AboutController`, and `AboutView`.
+- [x] Refactor `AppController` and `App` to inject and use `AboutController` / `AboutView` hierarchically.
+- [x] Update unit tests and register files in `CMakeLists.txt` and `docs/separation-of-concerns.md`.
 
-### Phase 11 — Service & Model Layer Setup (Forecast API Integration)
+### Phase 11 — Locations Database Integration (SQLite3) ✅ Done
+- [x] **Database Model & Controller Setup**:
+  - [x] Create `src/model/location_repository.hpp` defining the `LocationRepository` struct holding `std::vector<LocationMatch> saved_locations`.
+  - [x] Create `src/controller/db_controller.hpp` and `src/controller/db_controller.cpp` defining `DatabaseController`.
+  - [x] `DatabaseController` handles establishing database connections, executing the SQL schema initialization, and querying/saving locations directly into `LocationRepository`.
+- [x] **State & Controller updates**:
+  - [x] Add `save_to_db` flag to [LocationSearchState](file:///Users/mattswart/Source/CPP/weather-cli/src/model/location_search_state.hpp).
+  - [x] Inject `DatabaseController&` into [LocationController](file:///Users/mattswart/Source/CPP/weather-cli/src/controller/location_controller.hpp) and [AppController](file:///Users/mattswart/Source/CPP/weather-cli/src/controller/app_controller.hpp).
+  - [x] Update `LocationController::SelectSuggestion` to delegate saving selected location to `DatabaseController` when `save_to_db` is checked.
+  - [x] Implement `AppController::SelectSavedLocation(int saved_index)` to coordinate selection of saved database locations.
+- [x] **View Overlay & Dynamic Dropdown**:
+  - [x] Add a `save_to_db` Checkbox component inside [LocationSearchView](file:///Users/mattswart/Source/CPP/weather-cli/src/view/location_search_view.hpp).
+  - [x] Rebuild `locations_entries_` dynamically inside [app.cpp](file:///Users/mattswart/Source/CPP/weather-cli/src/view/app.cpp) based on `LocationRepository::saved_locations` contents, starting with no entries until saved.
+  - [x] Route dropdown clicks to `SelectSavedLocation` or `OpenSearch` dynamically.
+- [x] **Unit Tests & Integration**:
+  - [x] Create `tests/controller/test_db_controller.cpp` to verify SQLite CRUD queries and state updates.
+  - [x] Register new files in [CMakeLists.txt](file:///Users/mattswart/Source/CPP/weather-cli/CMakeLists.txt) and update diagrams in [separation-of-concerns.md](file:///Users/mattswart/Source/CPP/weather-cli/docs/separation-of-concerns.md).
+
+### Phase 12 — Refactor Database Controller & LocationRepository (Repository Pattern) ✅ Done
+- [x] **Define SQL Schema and Table Constants**:
+  - [x] Add `constexpr std::string_view` constants in `src/util/constants.hpp` for the database table name (`saved_locations`) and columns (`name`, `country`, `region`, `latitude`, `longitude`).
+- [x] **Convert `LocationRepository` to a Database-backed Class**:
+  - [x] Refactor `src/model/location_repository.hpp` to define `LocationRepository` as a class that accepts a database path in its constructor and holds the `sqlite3* db_` connection handle.
+  - [x] Move query logic, SQL strings, and execution from `DatabaseController` into `LocationRepository`. Use `std::format` to format all queries.
+  - [x] Implement query caching inside `LocationRepository` to maintain the in-memory `std::vector<LocationMatch>` favorites vector.
+- [x] **Thin Out `DatabaseController`**:
+  - [x] Refactor `src/controller/db_controller.hpp/cpp` to accept a `LocationRepository&` reference.
+  - [x] Delegate initialization, loading, and saving methods directly to the underlying `LocationRepository` class.
+- [x] **Unit Tests & Test SQLite Cleanup**:
+  - [x] Update `tests/controller/test_db_controller.cpp` to pass `":memory:"` as the database path, verifying operations in-memory without polluting the project root directory with test databases.
+  - [x] Ensure all 10 unit test cases compile and pass correctly.
+- [x] **Documentation Updates**:
+  - [x] Update diagrams and layer descriptions in `docs/separation-of-concerns.md` to reflect SQL ownership inside `LocationRepository`.
+
+### Phase 13 — Service & Model Layer Setup (Forecast API Integration)
 - [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
 - [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
 - [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
 - [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
 - [ ] Fully integrate the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 12 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+### Phase 14 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 
-### Phase 13 — System Integration & Verification
+### Phase 15 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.

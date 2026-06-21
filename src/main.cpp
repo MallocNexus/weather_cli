@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <cstdlib>
+#include <cstdio>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,7 +17,10 @@ int main(int argc, char* argv[]) {
     // Parse CLI parameters
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        if ((arg == "--area-code" || arg == "-a") && i + 1 < argc) {
+        if (arg == "--stdin-file" && i + 1 < argc) {
+            std::freopen(argv[i + 1], "r", stdin);
+            i++;
+        } else if ((arg == "--area-code" || arg == "-a") && i + 1 < argc) {
             area_code = argv[i + 1];
             i++;
         } else if ((arg == "--country" || arg == "-c") && i + 1 < argc) {
@@ -24,6 +28,7 @@ int main(int argc, char* argv[]) {
             i++;
         }
     }
+
 
     // Scenario 1: Headless CLI Parameters (e.g. --area-code 2155 --country AUS)
     if (!area_code.empty() || !country.empty()) {

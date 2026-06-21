@@ -230,30 +230,36 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 - [x] (No other C++ `.cpp` or `.hpp` source files will be created in this phase.)
 
 
-### Phase 3 — Service & Model Layer Setup
-- [ ] Implement `weather_data.hpp` structs.
-- [ ] Implement `weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
-- [ ] Set up `http_client.hpp/cpp` queries with query URL composition.
+### Phase 3 — TUI Outline Layout Setup (`AppState`, `AppController`, `App` View only) (Current Phase)
+- [ ] Implement `src/model/app_state.hpp` defining the TUI state model (active coordinates, units configuration, active tab selection, scrubber indices).
+- [ ] Implement `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp` coordinating core user actions (toggling Celsius/Fahrenheit, shifting tab selects, scrubbing timeline indices, exiting the loop).
+- [ ] Implement `src/view/app.hpp` and `src/view/app.cpp` building the visual wireframe:
+  - Top horizontal menu bar with options (Refresh, Units, Quit).
+  - Status banner showing mock city details.
+  - Summary row printing static condition text and mock ASCII icon clouds.
+  - View selectors for Temperature and Rain Probability graphs.
+  - A static FTXUI Canvas rendering horizontal lines to mockup the plotting area.
+  - Interactive slider timeline that scrubs indices (0 to 23).
+  - An hourly details box updating text metrics dynamically based on the active slider index.
+- [ ] Define the library targets (`util_lib`, `controller_lib`, `app_lib`) in `CMakeLists.txt` and link `weather_cli` executable to `app_lib`.
+- [ ] (No geocoding, HTTP network requests, parsing libraries, databases, custom canvas plotters, or WMO descriptions will be built in this phase. The UI components will render static mocked content.)
+
+### Phase 4 — Service & Model Layer Setup
+- [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
+- [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
+- [ ] Set up `src/service/http_client.hpp/cpp` queries with query URL composition.
 - [ ] Incorporate Catch2 verification tests for JSON parses and data caching.
-- [ ] Define the `weather_lib` and `util_lib` targets in `CMakeLists.txt`.
+- [ ] Define the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 4 — Controller State Logic
-- [ ] Formulate `app_state.hpp` with states (loading, loaded, errors).
-- [ ] Implement `app_controller.hpp/cpp` event dispatches.
-- [ ] Handle asynchronous fetching logic to trigger redraws when async data returns.
-- [ ] Add unit testing for the controller state machine.
-- [ ] Define the `controller_lib` target in `CMakeLists.txt`.
-
-### Phase 5 — View Component Layer (FTXUI Integration)
-- [ ] Implement multi-line ASCII art rendering in `weather_icon.hpp/cpp`.
-- [ ] Develop `sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs.
-- [ ] Establish `app.hpp/cpp` to layout frames, tabs, scrubber, and refresh buttons.
-- [ ] Integrate view components.
-- [ ] Define the `app_lib` target in `CMakeLists.txt`.
+### Phase 5 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+- [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
+- [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
+- [ ] Wire location search query suggestions list input in view and controller.
 
 ### Phase 6 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
-- [ ] Fully configure target linkages in `CMakeLists.txt`.
+- [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.
 - [ ] Code formatting check using Clang-Format verification.
+
 

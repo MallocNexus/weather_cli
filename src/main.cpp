@@ -58,13 +58,14 @@ int main(int argc, char* argv[]) {
         auto screen = ftxui::ScreenInteractive::Fullscreen();
 
         AppState state;
-        AppController controller(state, screen.ExitLoopClosure());
         
         LocationController loc_controller(state, [&screen] {
             screen.PostEvent(ftxui::Event::Custom);
         });
 
-        App app(state, controller, loc_controller);
+        AppController controller(state, loc_controller, screen.ExitLoopClosure());
+
+        App app(state, controller);
 
         screen.Loop(app.GetComponent());
         return EXIT_SUCCESS;

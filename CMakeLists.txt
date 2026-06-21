@@ -82,7 +82,10 @@ target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
 # ---------------------------------------------------------------------------
 # Layer 3: View
 # ---------------------------------------------------------------------------
-add_library(app_lib STATIC src/view/app.cpp)
+add_library(app_lib STATIC
+    src/view/app.cpp
+    src/view/location_search_view.cpp
+)
 target_include_directories(app_lib PUBLIC src/)
 target_link_libraries(app_lib PUBLIC
     ftxui::screen
@@ -98,19 +101,22 @@ add_executable(weather_cli src/main.cpp)
 target_link_libraries(weather_cli PRIVATE app_lib)
 
 # ---------------------------------------------------------------------------
-# Test executable (Deferred to Phase 7)
+# Test executable (Enabled in Phase 5)
 # ---------------------------------------------------------------------------
-# add_executable(run_tests
-#     tests/test_main.cpp
-#     tests/util/test_formatting.cpp
-#     tests/model/test_weather_data.cpp
-#     tests/service/test_weather_parser.cpp
-#     tests/controller/test_app_controller.cpp
-#     tests/view/test_app.cpp
-# )
-# target_link_libraries(run_tests PRIVATE
-#     Catch2::Catch2WithMain
-#     app_lib
-#     controller_lib
-#     weather_lib
-# )
+add_executable(run_tests
+    tests/test_main.cpp
+    tests/service/test_http_client.cpp
+    tests/service/test_geocoding_service.cpp
+    tests/controller/test_location_controller.cpp
+    tests/controller/test_app_controller.cpp
+    tests/util/test_formatting.cpp
+    tests/view/test_app.cpp
+)
+target_include_directories(run_tests PUBLIC src/)
+target_link_libraries(run_tests PRIVATE
+    Catch2::Catch2WithMain
+    app_lib
+    controller_lib
+    weather_lib
+    util_lib
+)

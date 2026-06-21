@@ -253,19 +253,60 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 - [x] (No forecast API requests, sparkline canvas plotting, or ASCII icon renderers will be implemented in this phase. Weather coordinates changes will simply update the mock lat/lon numbers in the status panel.)
 
 
-### Phase 5 — Service & Model Layer Setup (Forecast API Integration)
+### Phase 5 — Geocoding & HTTP Client Service Tests ✅ Done
+- [x] Create `tests/test_main.cpp` to configure the Catch2 test runner.
+- [x] Create `tests/service/test_http_client.cpp` verifying standard network exception handling and invalid URL processing behaviors.
+- [x] Create `tests/service/test_geocoding_service.cpp` testing JSON response parsing logic in isolation with mock JSON responses.
+- [x] Enable the `run_tests` target in `CMakeLists.txt` linking it against `Catch2::Catch2WithMain`, `weather_lib`, and `util_lib`.
+- [x] Build and execute the test runner to ensure all test suites pass.
+
+
+### Phase 6 — Search Location Modal Dialog Integration ✅ Done
+- [x] Implement focus management in `src/view/app.cpp` to call `search_input->TakeFocus()` dynamically in the Renderer loop when `state_.show_search_modal` transitions from `false` to `true`.
+- [x] Connect input text modifications dynamically via `search_input_option.on_change = [this] { ... }` so typing a city name automatically triggers search requests.
+- [x] Build a robust, thread-safe asynchronous search query sequence-matching mechanism in `LocationController` (using `std::atomic<uint64_t>`) to prevent network race conditions and thread leaks.
+- [x] Render geocoding errors (e.g. connection errors) in the suggestions box in `src/view/app.cpp` when `state_.has_error` is `true`.
+- [x] Handle dialog dismissal: verify that pressing `Esc` at any time inside the search modal closes the search dialog, clears temporary search state, and restores focus to the main interface.
+- [x] Ensure selection triggers coordinates update, resets search state, closes modal, and triggers a redraw.
+- [x] Add unit tests in `tests/controller/test_location_controller.cpp` to verify search triggering and state updates.
+
+### Phase 7 — Modal Dialog View/Controller/State Refactoring (MVC Isolation) ✅ Done
+- [x] Create `src/model/location_search_state.hpp` containing `LocationSearchState` (query, suggestions, loading, errors, and its own local mutex) to completely decouple search state from the global `AppState`.
+- [x] Remove all transient modal search variables and mutex properties from `AppState` in `src/model/app_state.hpp`.
+- [x] Update `LocationController` to own and manage the lifecycle of `LocationSearchState`, updating `AppState` only with the chosen coordinate values upon selected suggestions.
+- [x] Create `src/view/location_search_view.hpp` and `src/view/location_search_view.cpp` to fully encapsulate the search input, suggestions menu, modal rendering layouts, focus captures, and `Esc`/`Return` key event handlers.
+- [x] Refactor `App` views inside `src/view/app.hpp` and `src/view/app.cpp` to delegate search modal rendering and key interceptions to `LocationSearchView`, completely clearing out search UI logic from the main application view.
+- [x] Update `CMakeLists.txt` to compile `location_search_view.cpp` into `app_lib`.
+- [x] Update tests in `tests/controller/test_location_controller.cpp` to compile and pass with the new isolated state pattern.
+
+### Phase 8 — Architectural Separation of Concerns Documentation ✅ Done
+- [x] Create `docs/separation-of-concerns.md` detailing the architectural layers of the `weather-cli` application, including a Mermaid interaction diagram, detailed layer boundaries, sub-controller flows, state structures, and design style guidelines.
+
+### Phase 9 — Hierarchical MVC Refactor & Missing Test Cases Coverage
+- [ ] Refactor `AppController` in `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp` to take `LocationController&` in its constructor, add an `OpenSearch()` delegation method, and expose a getter to retrieve `LocationController`.
+- [ ] Refactor `App` in `src/view/app.hpp` and `src/view/app.cpp` to remove its dependency on `LocationController` (only takes `AppController&` and `AppState&`).
+- [ ] Update `App` to initialize `location_search_view_` using `controller.GetLocationController()`.
+- [ ] Route Locations menu triggers and modal visibility checks in `src/view/app.cpp` through `AppController`.
+- [ ] Update object construction wiring in `src/main.cpp` to initialize controllers hierarchically.
+- [ ] Create `tests/util/test_formatting.cpp` to verify temperature converters (Celsius/Fahrenheit) and time format utility methods.
+- [ ] Create `tests/controller/test_app_controller.cpp` to verify `AppController` units toggle state, tab shifts, timeline slider index updates, and coordination/delegation to `LocationController`.
+- [ ] Create `tests/view/test_app.cpp` to verify root View components initialize correctly, root tab defaults, and components getters behave gracefully without throwing exceptions.
+- [ ] Update `CMakeLists.txt` to compile all new test source files (`test_formatting.cpp`, `test_app_controller.cpp`, `test_app.cpp`) in `run_tests`.
+- [ ] Update the `docs/separation-of-concerns.md` document diagrams to reflect the strict 1-to-1 View-to-Controller bindings.
+
+### Phase 10 — Service & Model Layer Setup (Forecast API Integration)
 - [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
 - [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
 - [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
 - [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
-- [ ] Define the `weather_lib` target in `CMakeLists.txt`.
+- [ ] Fully integrate the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 6 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+### Phase 11 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 
-### Phase 7 — System Integration & Verification
+### Phase 12 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.

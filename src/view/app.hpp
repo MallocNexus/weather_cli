@@ -5,20 +5,20 @@
 #include <vector>
 
 #include "controller/app_controller.hpp"
-#include "controller/location_controller.hpp"
 #include "model/app_state.hpp"
+#include "view/location_search_view.hpp"
 
 namespace weather_cli {
 
 class App {
    public:
-    App(AppState& state, AppController& controller, LocationController& location_controller);
+    App(AppState& state, AppController& controller);
     ftxui::Component GetComponent();
 
    private:
     AppState& state_;
     AppController& controller_;
-    LocationController& location_controller_;
+    LocationSearchView location_search_view_;
     ftxui::Component main_renderer_;
 
     // Menu configurations
@@ -41,9 +41,6 @@ class App {
     std::vector<std::string> graph_tab_entries_ = {"Hourly Temperature Graph",
                                                    "Hourly Rain Probability"};
     int graph_tab_selected_ = 0;
-
-    // Geocoding suggestions entries
-    std::vector<std::string> suggestion_entries_;
 
     // Root layout selector tab index
     int root_tab_selected_ = 0;

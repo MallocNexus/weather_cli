@@ -2,7 +2,6 @@
 #include "service/http_client.hpp"
 #include <nlohmann/json.hpp>
 #include <cpr/util.h>
-#include <iostream>
 
 namespace weather_cli {
 
@@ -13,15 +12,22 @@ std::vector<LocationMatch> GeocodingService::Search(const std::string& query) {
         return {};
     }
 
+    std::string query_encoded = cpr::util::urlEncode(query);
+    std::string url = "https://geocoding-api.open-meteo.com/v1/search?name=" + 
+                      query_encoded + "&count=5&language=en&format=json";
+
+    std::string response = HttpClient::Fetch(url);
+    return ParseResponse(response);
+}
+
+std::vector<LocationMatch> GeocodingService::ParseResponse(const std::string& json_str) {
+    if (json_str.empty() || json_str == "{}") {
+        return {};
+    }
+
     std::vector<LocationMatch> matches;
     try {
-        // Safe query encoding using cpr's urlEncode helper
-        std::string query_encoded = cpr::util::urlEncode(query);
-        std::string url = "https://geocoding-api.open-meteo.com/v1/search?name=" + 
-                          query_encoded + "&count=5&language=en&format=json";
-
-        std::string response = HttpClient::Fetch(url);
-        auto data = json::parse(response);
+        auto data = json::parse(json_str);
 
         if (data.contains("results") && data["results"].is_array()) {
             for (const auto& item : data["results"]) {
@@ -35,7 +41,7 @@ std::vector<LocationMatch> GeocodingService::Search(const std::string& query) {
             }
         }
     } catch (const std::exception& e) {
-        std::cerr << "Geocoding request error: " << e.what() << "\n";
+        // Suppress parsing exceptions to return empty matches silently
     }
     return matches;
 }

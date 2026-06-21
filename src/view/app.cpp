@@ -12,8 +12,9 @@ using namespace ftxui;
 
 namespace weather_cli {
 
-App::App(AppState& state, AppController& controller, LocationController& location_controller)
-    : state_(state), controller_(controller), location_controller_(location_controller) {
+App::App(AppState& state, AppController& controller)
+    : state_(state), controller_(controller),
+      location_search_view_(controller.GetLocationController()) {
 
     // 1. Top animated navigation tab bar
     auto top_menu = Menu(&top_menu_entries_, &top_menu_selected_, MenuOption::HorizontalAnimated());
@@ -32,15 +33,11 @@ App::App(AppState& state, AppController& controller, LocationController& locatio
     MenuOption locations_option = MenuOption::HorizontalAnimated();
     locations_option.on_enter = [this] {
         if (locations_selected_ == 0) {
-            state_.show_search_modal = true;
+            controller_.OpenSearch();
         } else if (locations_selected_ == 1) {
-            state_.latitude = -33.8688;
-            state_.longitude = 151.2093;
-            controller_.SearchCity("Sydney");
+            controller_.SelectPresetLocation(1);
         } else if (locations_selected_ == 2) {
-            state_.latitude = 40.7128;
-            state_.longitude = -74.0060;
-            controller_.SearchCity("New York");
+            controller_.SelectPresetLocation(2);
         }
     };
     auto locations_menu = Menu(&locations_entries_, &locations_selected_, locations_option);
@@ -74,20 +71,6 @@ App::App(AppState& state, AppController& controller, LocationController& locatio
     // 4. Interactive Timeline scrub slider
     auto timeline_slider = Slider("Timeline Offset: ", &state_.selected_hour_index, 0, 23, 1);
 
-    // 5. Geocoding Search input
-    InputOption search_input_option = InputOption::Default();
-    search_input_option.content = &state_.search_query;
-    search_input_option.placeholder = "Enter city name and press Enter to search";
-    search_input_option.multiline = false;
-    auto search_input = Input(search_input_option);
-
-    // 6. Geocoding suggestions menu list
-    MenuOption suggestions_option = MenuOption::Vertical();
-    suggestions_option.on_enter = [this] {
-        location_controller_.SelectSuggestion(state_.selected_suggestion_index);
-    };
-    auto suggestions_menu = Menu(&suggestion_entries_, &state_.selected_suggestion_index, suggestions_option);
-
     // Layout focus containment
     auto main_container = Container::Vertical({
         top_menu,
@@ -96,32 +79,17 @@ App::App(AppState& state, AppController& controller, LocationController& locatio
         timeline_slider
     });
 
-    auto search_container = Container::Vertical({
-        search_input,
-        suggestions_menu
-    });
+    auto root_container = Container::Tab(
+        {main_container, location_search_view_.GetComponent()},
+        &root_tab_selected_
+    );
 
-    auto root_container = Container::Tab({main_container, search_container}, &root_tab_selected_);
+    main_renderer_ = Renderer(root_container, [&, top_menu, tab_container, graph_tabs, timeline_slider] {
+        // Fetch show_search_modal state under mutex to coordinate active tab
+        bool show_search_modal = controller_.IsSearchModalOpen();
 
-    // Intercept Escape to close modal, and Enter to trigger async query fetches
-    auto event_dispatcher = CatchEvent(root_container, [&](Event event) {
-        if (state_.show_search_modal) {
-            if (event == Event::Escape) {
-                state_.show_search_modal = false;
-                return true;
-            }
-            if (event == Event::Return) {
-                if (search_input->Focused()) {
-                    location_controller_.Search(state_.search_query);
-                    return true;
-                }
-            }
-        }
-        return false;
-    });
+        root_tab_selected_ = show_search_modal ? 1 : 0;
 
-    main_renderer_ = Renderer(event_dispatcher, [&, top_menu, tab_container, graph_tabs, timeline_slider, search_input, suggestions_menu] {
-        root_tab_selected_ = state_.show_search_modal ? 1 : 0;
         double current_temp = 18.5;
         double max_temp = 21.0;
         double min_temp = 12.5;
@@ -185,19 +153,6 @@ App::App(AppState& state, AppController& controller, LocationController& locatio
             })
         });
 
-        // Populate suggestion labels dynamically
-        suggestion_entries_.clear();
-        for (const auto& match : state_.search_suggestions) {
-            std::string label = match.name;
-            if (!match.region.empty()) {
-                label += ", " + match.region;
-            }
-            if (!match.country.empty()) {
-                label += " (" + match.country + ")";
-            }
-            suggestion_entries_.push_back(label);
-        }
-
         // Assemble main application frame layout
         Element document = vbox({
             vbox({
@@ -227,33 +182,8 @@ App::App(AppState& state, AppController& controller, LocationController& locatio
             }) | border
         });
 
-        // Search modal view overlay
-        if (state_.show_search_modal) {
-            auto suggestions_box = suggestion_entries_.empty()
-                ? (state_.is_loading ? text("Searching...") : text("No matches found"))
-                : (suggestions_menu->Render() | vscroll_indicator | frame);
-
-            auto modal_element = vbox({
-                text("Search Location") | bold | center,
-                separator(),
-                text("Enter city name and press Enter to query:") | dim,
-                search_input->Render() | border,
-                separator(),
-                text("Matching Cities:") | bold,
-                suggestions_box | size(HEIGHT, GREATER_THAN, 5) | border,
-                separator(),
-                hbox({
-                    text("[Esc] Cancel") | dim,
-                    filler(),
-                    text("[Enter] Search / Select") | dim
-                })
-            }) | size(WIDTH, EQUAL, 60) | border | color(Color::Cyan) | clear_under | center;
-
-            document = dbox({
-                document,
-                modal_element
-            });
-        }
+        // Layer the modal search view if active
+        document = location_search_view_.Render(document);
 
         return document;
     });

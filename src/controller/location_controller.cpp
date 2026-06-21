@@ -1,56 +1,117 @@
 #include "controller/location_controller.hpp"
 #include "service/geocoding_service.hpp"
 #include <thread>
+#include <mutex>
 
 namespace weather_cli {
 
-LocationController::LocationController(AppState& state, std::function<void()> trigger_redraw)
-    : state_(state), trigger_redraw_(trigger_redraw) {}
+LocationController::LocationController(AppState& app_state, std::function<void()> trigger_redraw)
+    : app_state_(app_state), trigger_redraw_(trigger_redraw), current_search_id_(0) {}
 
 void LocationController::Search(const std::string& query) {
-    state_.search_query = query;
-    state_.is_loading = true;
-    state_.has_error = false;
-
-    // Dispatch geocoding query onto background worker thread
-    std::thread([this, query]() {
-        try {
-            auto matches = GeocodingService::Search(query);
-
-            state_.search_suggestions = matches;
-            state_.selected_suggestion_index = 0;
-            state_.is_loading = false;
-
+    {
+        std::lock_guard<std::mutex> lock(search_state_.mutex);
+        search_state_.search_query = query;
+        if (query.empty()) {
+            search_state_.search_suggestions.clear();
+            search_state_.selected_suggestion_index = 0;
+            search_state_.is_loading = false;
+            search_state_.has_error = false;
+            search_state_.error_message = "";
             if (trigger_redraw_) {
                 trigger_redraw_();
             }
+            return;
+        }
+
+        search_state_.is_loading = true;
+        search_state_.has_error = false;
+        search_state_.error_message = "";
+    }
+
+    uint64_t search_id = ++current_search_id_;
+
+    // Dispatch geocoding query onto background worker thread
+    std::thread([this, query, search_id]() {
+        try {
+            auto matches = GeocodingService::Search(query);
+
+            if (search_id == current_search_id_) {
+                std::lock_guard<std::mutex> lock(search_state_.mutex);
+                search_state_.search_suggestions = matches;
+                search_state_.selected_suggestion_index = 0;
+                search_state_.is_loading = false;
+
+                if (trigger_redraw_) {
+                    trigger_redraw_();
+                }
+            }
         } catch (const std::exception& e) {
-            state_.is_loading = false;
-            state_.has_error = true;
-            state_.error_message = e.what();
-            if (trigger_redraw_) {
-                trigger_redraw_();
+            if (search_id == current_search_id_) {
+                std::lock_guard<std::mutex> lock(search_state_.mutex);
+                search_state_.search_suggestions.clear();
+                search_state_.selected_suggestion_index = 0;
+                search_state_.is_loading = false;
+                search_state_.has_error = true;
+                search_state_.error_message = e.what();
+
+                if (trigger_redraw_) {
+                    trigger_redraw_();
+                }
             }
         }
     }).detach();
 }
 
 void LocationController::SelectSuggestion(int index) {
-    if (index >= 0 && index < static_cast<int>(state_.search_suggestions.size())) {
-        const auto& match = state_.search_suggestions[index];
-        state_.city_name = match.name;
-        state_.latitude = match.latitude;
-        state_.longitude = match.longitude;
+    std::lock_guard<std::mutex> lock(search_state_.mutex);
+    if (index >= 0 && index < static_cast<int>(search_state_.search_suggestions.size())) {
+        const auto& match = search_state_.search_suggestions[index];
+        
+        // Write results to main app state
+        app_state_.city_name = match.name;
+        app_state_.latitude = match.latitude;
+        app_state_.longitude = match.longitude;
 
         // Reset query modal parameters
-        state_.show_search_modal = false;
-        state_.search_query = "";
-        state_.search_suggestions.clear();
-        state_.selected_suggestion_index = 0;
+        search_state_.show_search_modal = false;
+        search_state_.search_query = "";
+        search_state_.search_suggestions.clear();
+        search_state_.selected_suggestion_index = 0;
+        search_state_.has_error = false;
+        search_state_.error_message = "";
 
         if (trigger_redraw_) {
             trigger_redraw_();
         }
+    }
+}
+
+void LocationController::CancelSearch() {
+    std::lock_guard<std::mutex> lock(search_state_.mutex);
+    search_state_.show_search_modal = false;
+    search_state_.search_query = "";
+    search_state_.search_suggestions.clear();
+    search_state_.selected_suggestion_index = 0;
+    search_state_.has_error = false;
+    search_state_.error_message = "";
+
+    if (trigger_redraw_) {
+        trigger_redraw_();
+    }
+}
+
+void LocationController::OpenSearch() {
+    std::lock_guard<std::mutex> lock(search_state_.mutex);
+    search_state_.show_search_modal = true;
+    search_state_.search_query = "";
+    search_state_.search_suggestions.clear();
+    search_state_.selected_suggestion_index = 0;
+    search_state_.has_error = false;
+    search_state_.error_message = "";
+
+    if (trigger_redraw_) {
+        trigger_redraw_();
     }
 }
 

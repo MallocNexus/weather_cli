@@ -18,6 +18,7 @@ struct LocationSearchState {
     bool show_search_modal = false;
     bool save_to_db = false;
     std::string search_query = "";
+    int cursor_position = 0;
     std::vector<LocationMatch> search_suggestions;
     int selected_suggestion_index = 0;
     bool is_loading = false;

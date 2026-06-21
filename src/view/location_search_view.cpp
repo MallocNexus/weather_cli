@@ -12,35 +12,53 @@ LocationSearchView::LocationSearchView(LocationController& controller)
 
     auto& search_state = controller_.GetSearchState();
 
-    // 1. Geocoding Search input
+    // 1. Search input — styled via transform (bg applied here, not on the
+    //    rendered element, so FTXUI's internal focusCursorBarBlinking can
+    //    still place the terminal cursor correctly).
     InputOption search_input_option = InputOption::Default();
     search_input_option.content = &search_state.search_query;
     search_input_option.placeholder = "Enter city name to search";
+    search_input_option.cursor_position = &search_state.cursor_position;
     search_input_option.multiline = false;
+    search_input_option.insert = false;  // Block cursor (inverts colors) — always visible.
+                                         // insert=true uses the terminal's native bar cursor
+                                         // which is invisible on a black background.
     search_input_option.on_change = [this] {
         controller_.Search(controller_.GetSearchState().search_query);
     };
+    search_input_option.transform = [](InputState s) {
+        if (s.is_placeholder) {
+            s.element |= dim;
+        }
+        s.element |= (s.focused ? color(Color::Green) : color(Color::White));
+        return s.element;
+    };
     search_input_ = Input(search_input_option);
 
-    // 2. Geocoding suggestions menu list
+    // 2. Suggestions menu
     MenuOption suggestions_option = MenuOption::Vertical();
     suggestions_option.on_enter = [this] {
         controller_.SelectSuggestion(controller_.GetSearchState().selected_suggestion_index);
     };
     suggestions_menu_ = Menu(&suggestion_entries_, &search_state.selected_suggestion_index, suggestions_option);
 
-    // 3. Save checkbox option
+    // 3. Save checkbox
     save_checkbox_ = Checkbox("Save location to database", &search_state.save_to_db);
 
-    // Layout focus containment
+    // Build container — Container::Vertical correctly overrides SetActiveChild
+    // so TakeFocus() propagation works through it.
     auto search_container = Container::Vertical({
         search_input_,
-        suggestions_menu_,
-        save_checkbox_
+        save_checkbox_,
+        suggestions_menu_
     });
 
-    // Intercept Escape to close modal, and Enter to shift focus to suggestions
-    auto event_dispatcher = CatchEvent(search_container, [this](Event event) {
+    // Apply navigation event handling directly on the container using |=.
+    // This is the canonical FTXUI pattern (see examples/component/input.cpp
+    // lines 36-41: input_phone_number |= CatchEvent(...)).
+    // Crucially, this keeps search_container as the direct child of Renderer
+    // below, preserving the SetActiveChild focus chain intact.
+    search_container |= CatchEvent([this](Event event) -> bool {
         auto& state = controller_.GetSearchState();
         bool show_modal = false;
         {
@@ -48,36 +66,97 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             show_modal = state.show_search_modal;
         }
 
-        if (show_modal) {
-            if (event == Event::Escape) {
-                controller_.CancelSearch();
+        if (!show_modal) {
+            return false;
+        }
+
+        if (event == Event::Escape) {
+            controller_.CancelSearch();
+            return true;
+        }
+
+        if (event == Event::Return) {
+            if (search_input_->Focused()) {
+                bool suggestions_available = false;
+                {
+                    std::lock_guard<std::mutex> lock(state.mutex);
+                    suggestions_available = !state.search_suggestions.empty();
+                }
+                if (suggestions_available) {
+                    suggestions_menu_->TakeFocus();
+                }
                 return true;
             }
-            if (event == Event::Return) {
-                if (search_input_->Focused()) {
-                    bool suggestions_available = false;
+        }
+
+        if (event == Event::Tab || event == Event::ArrowDown) {
+            if (search_input_->Focused()) {
+                save_checkbox_->TakeFocus();
+            } else if (save_checkbox_->Focused()) {
+                bool suggestions_available = false;
+                {
+                    std::lock_guard<std::mutex> lock(state.mutex);
+                    suggestions_available = !state.search_suggestions.empty();
+                }
+                if (suggestions_available) {
+                    state.selected_suggestion_index = 0;
+                    suggestions_menu_->TakeFocus();
+                }
+                // No suggestions: stay on checkbox
+            } else if (suggestions_menu_->Focused()) {
+                if (event == Event::Tab) {
+                    search_input_->TakeFocus();
+                } else {
+                    // ArrowDown: move selection down, clamp at last item
+                    size_t suggestions_count = 0;
                     {
                         std::lock_guard<std::mutex> lock(state.mutex);
-                        suggestions_available = !state.search_suggestions.empty();
+                        suggestions_count = state.search_suggestions.size();
                     }
-                    if (suggestions_available) {
-                        suggestions_menu_->TakeFocus();
+                    if (suggestions_count > 0 &&
+                        static_cast<size_t>(state.selected_suggestion_index) < suggestions_count - 1) {
+                        state.selected_suggestion_index++;
                     }
-                    return true;
+                    // At last item: do nothing (consume event)
                 }
             }
+            return true;
         }
+
+        if (event == Event::TabReverse || event == Event::ArrowUp) {
+            if (search_input_->Focused()) {
+                // ArrowUp from input: stay on input
+            } else if (save_checkbox_->Focused()) {
+                search_input_->TakeFocus();
+            } else if (suggestions_menu_->Focused()) {
+                if (event == Event::TabReverse) {
+                    search_input_->TakeFocus();
+                } else {
+                    if (state.selected_suggestion_index <= 0) {
+                        state.selected_suggestion_index = 0;
+                        save_checkbox_->TakeFocus();
+                    } else {
+                        state.selected_suggestion_index--;
+                    }
+                }
+            }
+            return true;
+        }
+
         return false;
     });
 
-    // Wrap in a custom renderer that manages focus transitions and populates labels dynamically
-    view_component_ = Renderer(event_dispatcher, [this] {
+    // Renderer(search_container, lambda) — search_container (Container::Vertical
+    // with |= CatchEvent decorator) is the direct child. This is identical to
+    // the official input.cpp and composition.cpp examples. No wrapper sits
+    // between Renderer and the Container, so the focus chain is unbroken.
+    view_component_ = Renderer(search_container, [this] {
         auto& state = controller_.GetSearchState();
-        
+
         bool show_modal = false;
         bool is_loading = false;
         bool has_error = false;
-        std::string error_message = "";
+        std::string error_message;
         std::vector<LocationMatch> suggestions_copy;
         {
             std::lock_guard<std::mutex> lock(state.mutex);
@@ -112,7 +191,7 @@ LocationSearchView::LocationSearchView(LocationController& controller)
                                        : text("No matches found")))
             : (suggestions_menu_->Render() | vscroll_indicator | frame);
 
-        auto modal_element = vbox({
+        return vbox({
             text("Search Location") | bold | center,
             separator(),
             text("Enter city name and press Enter to query:") | dim,
@@ -124,13 +203,11 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             suggestions_box | size(HEIGHT, GREATER_THAN, 5) | border,
             separator(),
             hbox({
-                text("[Esc] Cancel") | dim,
+                text("[Esc] Cancel  [Tab/Arrows] Cycle Focus") | dim,
                 filler(),
                 text("[Enter] Search / Select / Toggle") | dim
             })
         }) | size(WIDTH, EQUAL, 60) | border | color(Color::Cyan) | clear_under | center;
-
-        return modal_element;
     });
 }
 

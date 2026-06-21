@@ -82,6 +82,7 @@ void LocationController::SelectSuggestion(int index) {
         search_state_.show_search_modal = false;
         search_state_.save_to_db = false;
         search_state_.search_query = "";
+        search_state_.cursor_position = 0;
         search_state_.search_suggestions.clear();
         search_state_.selected_suggestion_index = 0;
         search_state_.has_error = false;
@@ -98,6 +99,7 @@ void LocationController::CancelSearch() {
     search_state_.show_search_modal = false;
     search_state_.save_to_db = false;
     search_state_.search_query = "";
+    search_state_.cursor_position = 0;
     search_state_.search_suggestions.clear();
     search_state_.selected_suggestion_index = 0;
     search_state_.has_error = false;
@@ -113,6 +115,7 @@ void LocationController::OpenSearch() {
     search_state_.show_search_modal = true;
     search_state_.save_to_db = false;
     search_state_.search_query = "";
+    search_state_.cursor_position = 0;
     search_state_.search_suggestions.clear();
     search_state_.selected_suggestion_index = 0;
     search_state_.has_error = false;

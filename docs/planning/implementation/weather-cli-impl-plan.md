@@ -334,19 +334,86 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 - [x] **Documentation Updates**:
   - [x] Update diagrams and layer descriptions in `docs/separation-of-concerns.md` to reflect SQL ownership inside `LocationRepository`.
 
-### Phase 13 — Service & Model Layer Setup (Forecast API Integration)
+### Phase 12.1 — Keyboard Focus Fix for Search Dialog Checkbox ✅ Done
+- [x] **Tab Navigation Focus Traversal**:
+  - [x] Update key event dispatching inside `src/view/location_search_view.cpp`.
+  - [x] Handle `Event::Tab` to cycle focus forward: search input $\rightarrow$ search suggestions menu (if suggestions exist) $\rightarrow$ save to DB checkbox $\rightarrow$ search input.
+  - [x] Handle `Event::TabReverse` to cycle focus backward: search input $\rightarrow$ save to DB checkbox $\rightarrow$ search suggestions menu (if suggestions exist) $\rightarrow$ search input.
+- [x] **Input Box Styling**:
+  - [x] Refactor input box renderer inside `src/view/location_search_view.cpp` to use black background (`bgcolor(Color::Black)`) and green text (`color(Color::Green)`).
+- [x] **Modal Rendering and Verification**:
+  - [x] Update visual labels or instructions in the footer of the search modal to clarify keyboard options (e.g., adding `[Tab] Cycle Focus`).
+  - [x] Verify that navigating and toggling is fully operational via keyboard commands.
+
+### Phase 12.2 — Layout Navigation Alignment & Input Cursor Fix ✅ Done
+- [x] **Align Focus Order with Visual Layout**:
+  - [x] Update `search_container` in `src/view/location_search_view.cpp` to lay out components as: Input $\rightarrow$ Checkbox $\rightarrow$ Suggestions List.
+  - [x] Adjust `event_dispatcher` to handle `ArrowUp`/`ArrowDown`/`Tab`/`TabReverse` in this exact visual sequence.
+- [x] **Fix Editing Cursor Visibility**:
+  - [x] Add `cursor_position` tracking inside `LocationSearchState`.
+  - [x] Bind cursor position pointer to `search_input_option.cursor_position`.
+  - [x] Reset `cursor_position = 0` inside `LocationController` during modal state transitions (Select, Cancel, Open) to prevent cursor clipping.
+  - [x] Style cursor highlight naturally by removing background color overrides from the text input transform.
+
+### Phase 13 — CLI Postcode + Country Geocoding Lookup ⬅ Next
+Wire the existing headless CLI path in `main.cpp` to actually call the geocoding
+service when `--area-code` and `--country` are provided, resolve the location,
+print it to stdout, and exit — no TUI launched.
+
+**Example invocation:**
+```bash
+./weather_cli --area-code 2153 --country AU
+```
+**Expected console output:**
+```
+Resolved location:
+  City:    Baulkham Hills
+  Region:  New South Wales
+  Country: Australia
+  Lat:     -33.7667
+  Lon:     151.0000
+```
+
+- [ ] **Step 13.1** — Extend `GeocodingService::Search` signature:
+  - [ ] Add `const std::string& country_code = ""` default parameter to `Search` in `src/service/geocoding_service.hpp`.
+  - [ ] Append `&countryCode=<code>` to the URL in `geocoding_service.cpp` when `country_code` is non-empty.
+  - [ ] Existing `LocationController` call (no country code) is unaffected via default arg.
+- [ ] **Step 13.2** — Wire geocoding into headless CLI path in `main.cpp`:
+  - [ ] Add `#include "service/geocoding_service.hpp"` to `main.cpp`.
+  - [ ] Replace the echo stub (`std::cout << "Area Code: ..."`) with a real synchronous `GeocodingService::Search(area_code, country)` call.
+  - [ ] Print resolved `LocationMatch` fields (name, region, country, latitude, longitude) to stdout.
+  - [ ] Print an error to stderr and return `EXIT_FAILURE` when no results are found.
+- [ ] **Step 13.3** — Build and manual test:
+  - [ ] `./weather_cli --area-code 2153 --country AU` → Baulkham Hills, NSW, Australia.
+  - [ ] `./weather_cli --area-code 90210 --country US` → Beverly Hills, California.
+  - [ ] `./weather_cli --area-code 99999 --country ZZ` → error + exit code 1.
+  - [ ] `echo "2153 AU" | ./weather_cli` → same Baulkham Hills output (stdin pipe path covered by same fix).
+  - [ ] `./weather_cli` (no args) → TUI launches normally (regression check).
+- [ ] **Step 13.4** — Update `README.md`:
+  - [ ] Add a **CLI Usage** section documenting the `--area-code` and `--country` flags.
+  - [ ] Explicitly state that `--country` requires an **ISO 3166-1 alpha-2** code (2-letter, e.g. `AU`, `US`, `GB`) — alpha-3 codes (`AUS`) are not accepted.
+  - [ ] Include a usage example showing `--area-code 2153 --country AU` and the expected output.
+  - [ ] Include a stdin pipe example: `echo "2153 AU" | weather_cli`.
+
+**Files changed:** `geocoding_service.hpp`, `geocoding_service.cpp`, `main.cpp`, `README.md` — no new files, no CMake changes.
+
+> **Note:** Country codes must be ISO 3166-1 alpha-2 (`AU`, `US`, `GB`). The API does not accept alpha-3 (`AUS`).
+
+---
+
+### Phase 14 — Service & Model Layer Setup (Forecast API Integration)
 - [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
 - [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
 - [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
 - [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
 - [ ] Fully integrate the `weather_lib` target in `CMakeLists.txt`.
 
-### Phase 14 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
+### Phase 15 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 
-### Phase 15 — System Integration & Verification
+### Phase 16 — System Integration & Verification
 - [ ] Update `src/main.cpp` to fully wire the real views, controllers, services, and state models.
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.

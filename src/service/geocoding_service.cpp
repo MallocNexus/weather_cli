@@ -7,14 +7,18 @@ namespace weather_cli {
 
 using json = nlohmann::json;
 
-std::vector<LocationMatch> GeocodingService::Search(const std::string& query) {
+std::vector<LocationMatch> GeocodingService::Search(const std::string& query,
+                                                    const std::string& country_code) {
     if (query.empty()) {
         return {};
     }
 
     std::string query_encoded = cpr::util::urlEncode(query);
-    std::string url = "https://geocoding-api.open-meteo.com/v1/search?name=" + 
+    std::string url = "https://geocoding-api.open-meteo.com/v1/search?name=" +
                       query_encoded + "&count=5&language=en&format=json";
+    if (!country_code.empty()) {
+        url += "&countryCode=" + cpr::util::urlEncode(country_code);
+    }
 
     std::string response = HttpClient::Fetch(url);
     return ParseResponse(response);

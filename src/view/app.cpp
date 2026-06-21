@@ -86,7 +86,19 @@ App::App(AppState& state, AppController& controller)
         &root_tab_selected_
     );
 
-    main_renderer_ = Renderer(root_container, [&, top_menu, tab_container, graph_tabs, timeline_slider] {
+    // Keep root_tab_selected_ in sync BEFORE events are routed.
+    // ContainerBase::OnEvent reads the selector during event processing
+    // (before render runs), so updating it only in the Renderer lambda was
+    // too late — the Tab always forwarded events to tab 0 (main), meaning
+    // search_input_ was never in the focused subtree and Focused() returned false.
+    auto root_with_sync = CatchEvent(root_container, [this](Event /*event*/) {
+        root_tab_selected_ = controller_.IsSearchModalOpen() ? 1
+                           : controller_.IsAboutModalOpen()  ? 2
+                                                             : 0;
+        return false;  // never consume — just sync the selector then pass through
+    });
+
+    main_renderer_ = Renderer(root_with_sync, [&, top_menu, tab_container, graph_tabs, timeline_slider] {
         // Rebuild locations menu items dynamically from database repository favorites
         const auto& saved_locs = controller_.GetDatabaseController().GetRepository().GetSavedLocations();
         if (locations_entries_.size() != saved_locs.size() + 1) {

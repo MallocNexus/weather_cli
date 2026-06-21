@@ -15,9 +15,6 @@ public:
 
     // Parses raw JSON response strings from the Geocoding API (for testing)
     static std::vector<LocationMatch> ParseResponse(const std::string& json_str);
-
-    // Parses raw JSON response strings from Zippopotam.us (for testing)
-    static std::vector<LocationMatch> ParseZippopotamResponse(const std::string& json_str);
 };
 
 

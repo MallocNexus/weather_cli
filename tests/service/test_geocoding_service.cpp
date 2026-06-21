@@ -56,30 +56,4 @@ TEST_CASE("Geocoding Response Parsing", "[service][geocoding]") {
         auto results = GeocodingService::ParseResponse("{invalid_json}");
         REQUIRE(results.empty());
     }
-
-    SECTION("Parses valid Zippopotam JSON response correctly") {
-        std::string json_str = R"({
-            "post code": "2154",
-            "country": "Australia",
-            "country abbreviation": "AU",
-            "places": [
-                {
-                    "place name": "Castle Hill",
-                    "longitude": "151",
-                    "state": "New South Wales",
-                    "state abbreviation": "NSW",
-                    "latitude": "-33.7333"
-                }
-            ]
-        })";
-
-        auto results = GeocodingService::ParseZippopotamResponse(json_str);
-
-        REQUIRE(results.size() == 1);
-        REQUIRE(results[0].name == "Castle Hill");
-        REQUIRE(results[0].country == "Australia");
-        REQUIRE(results[0].region == "New South Wales");
-        REQUIRE(results[0].latitude == -33.7333);
-        REQUIRE(results[0].longitude == 151.0);
-    }
 }

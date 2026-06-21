@@ -61,6 +61,7 @@ add_library(weather_lib STATIC
     src/model/location_repository.cpp
     src/service/http_client.cpp
     src/service/geocoding_service.cpp
+    src/service/zippopotam_service.cpp
 )
 target_include_directories(weather_lib PUBLIC src/)
 target_link_libraries(weather_lib PUBLIC
@@ -111,6 +112,7 @@ add_executable(run_tests
     tests/test_main.cpp
     tests/service/test_http_client.cpp
     tests/service/test_geocoding_service.cpp
+    tests/service/test_zippopotam_service.cpp
     tests/controller/test_location_controller.cpp
     tests/controller/test_app_controller.cpp
     tests/controller/test_about_controller.cpp

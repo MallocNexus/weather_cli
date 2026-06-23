@@ -457,24 +457,24 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
 - [x] Create `src/model/weather_data.cpp` (initially empty / stub definition file).
 - [x] **Files changed:** `src/model/weather_data.hpp` (new), `src/model/weather_data.cpp` (new).
 
-#### Step 16.1.3 — WMO Code → Icon & Description Mapping (`weather_icon.hpp/.cpp`)
-- [ ] Create `src/view/weather_icon.hpp` declaring `WeatherIcon` with two static methods:
-  - [ ] `static const std::vector<std::string>& GetIcon(int wmo_code)` — returns the matching icon constant from `weather_icons.hpp`.
-  - [ ] `static std::string GetDescription(int wmo_code)` — returns a human-readable condition string.
-- [ ] Create `src/view/weather_icon.cpp` implementing WMO grouping logic:
-  - [ ] `0` → `kSunny`, `"Clear Sky"`
-  - [ ] `1, 2` → `kSunny`, `"Mainly Clear"` / `"Partly Cloudy"`
-  - [ ] `3` → `kCloudy`, `"Overcast"`
-  - [ ] `45, 48` → `kCloudy`, `"Foggy"`
-  - [ ] `51–57` → `kRainy`, `"Drizzle"`
-  - [ ] `61–67` → `kRainy`, `"Light Rain"` / `"Rain"` / `"Heavy Rain"`
-  - [ ] `71–77` → `kSnowy`, `"Snow"`
-  - [ ] `80–82` → `kRainy`, `"Rain Showers"`
-  - [ ] `85, 86` → `kSnowy`, `"Snow Showers"`
-  - [ ] `95` → `kStormy`, `"Thunderstorm"`
-  - [ ] `96, 99` → `kStormy`, `"Thunderstorm w/ Hail"`
-  - [ ] _(fallback)_ → `kCloudy`, `"Unknown"`
-- [ ] **Files changed:** `src/view/weather_icon.hpp` (new), `src/view/weather_icon.cpp` (new).
+#### Step 16.1.3 — WMO Code → Icon & Description Mapping (`weather_icon.hpp/.cpp`) ✅ Done
+- [x] Create `src/view/weather_icon.hpp` declaring `WeatherIcon` with two static methods:
+  - [x] `static const std::vector<std::string>& GetIcon(int wmo_code)` — returns the matching icon constant from `weather_icons.hpp`.
+  - [x] `static std::string GetDescription(int wmo_code)` — returns a human-readable condition string.
+- [x] Create `src/view/weather_icon.cpp` implementing WMO grouping logic:
+  - [x] `0` → `kSunny`, `"Clear Sky"`
+  - [x] `1, 2` → `kSunny`, `"Mainly Clear"` / `"Partly Cloudy"`
+  - [x] `3` → `kCloudy`, `"Overcast"`
+  - [x] `45, 48` → `kCloudy`, `"Foggy"`
+  - [x] `51–57` → `kRainy`, `"Drizzle"`
+  - [x] `61–67` → `kRainy`, `"Light Rain"` / `"Rain"` / `"Heavy Rain"`
+  - [x] `71–77` → `kSnowy`, `"Snow"`
+  - [x] `80–82` → `kRainy`, `"Rain Showers"`
+  - [x] `85, 86` → `kSnowy`, `"Snow Showers"`
+  - [x] `95` → `kStormy`, `"Thunderstorm"`
+  - [x] `96, 99` → `kStormy`, `"Thunderstorm w/ Hail"`
+  - [x] _(fallback)_ → `kCloudy`, `"Unknown"`
+- [x] **Files changed:** `src/view/weather_icon.hpp` (new), `src/view/weather_icon.cpp` (new).
 
 #### Step 16.1.4 — Implement `WeatherService::FetchCurrentConditions` (`weather_service.hpp/.cpp`)
 - [ ] Create `src/service/weather_service.hpp` declaring `WeatherService` with:

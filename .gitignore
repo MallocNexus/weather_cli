@@ -2,3 +2,4 @@ build/
 .cache/
 *.swp
 .DS_Store
+weather_cache.db

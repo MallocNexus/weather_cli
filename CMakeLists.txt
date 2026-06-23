@@ -59,6 +59,7 @@ target_include_directories(util_lib PUBLIC src/)
 # ---------------------------------------------------------------------------
 add_library(weather_lib STATIC
     src/model/location_repository.cpp
+    src/model/weather_data.cpp
     src/service/http_client.cpp
     src/service/geocoding_service.cpp
     src/service/zippopotam_service.cpp

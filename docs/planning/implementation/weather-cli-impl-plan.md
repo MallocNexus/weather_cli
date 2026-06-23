@@ -434,12 +434,118 @@ Add support for searching by city name via the CLI using a new `--city` flag (e.
   - [x] Document the new `--city` flag in the CLI Usage section.
   - [x] Provide an example using the `--city` flag with a multi-word city name wrapped in quotes.
 
-### Phase 16 — Service & Model Layer Setup (Forecast API Integration)
-- [ ] Implement `src/model/weather_data.hpp` and `src/model/weather_data.cpp` structs.
-- [ ] Implement `src/service/weather_parser.hpp/cpp` parsing functions with associated JSON test vectors.
-- [ ] Implement `src/service/weather_service.hpp/cpp` queries with query URL composition and SQLite data caching.
-- [ ] Incorporate Catch2 verification tests for JSON parses and database caching.
-- [ ] Fully integrate the `weather_lib` target in `CMakeLists.txt`.
+### Phase 16.1 — Current Conditions Fetch & Icon Rendering
+Wire the Open-Meteo API for live current conditions and drive the ASCII icon in the summary panel from `weather_icons.hpp` using the returned WMO weather code.
+
+#### Step 16.1.1 — Add Forecast API Constants (`constants.hpp`) ✅ Done
+- [x] Add forecast URL and query parameter constants to `src/util/constants.hpp`:
+  - [x] `kForecastApiEndpoint` — `"https://api.open-meteo.com/v1/forecast"` (replaces/unifies existing `kApiEndpoint`).
+  - [x] `kCurrentParams` — comma-separated current fields: `temperature_2m`, `relative_humidity_2m`, `wind_speed_10m`, `weather_code`, `apparent_temperature`.
+  - [x] `kDailyParams` — `temperature_2m_max`, `temperature_2m_min`.
+  - [x] `kForecastTimeZone` — `"auto"`.
+- [x] **Files changed:** `src/util/constants.hpp` only.
+
+#### Step 16.1.2 — Define `CurrentConditions` Domain Struct (`weather_data.hpp/.cpp`) ✅ Done
+- [x] Create `src/model/weather_data.hpp` defining the `CurrentConditions` struct:
+  - [x] `double temperature` — current temperature in °C.
+  - [x] `double feels_like` — apparent temperature in °C.
+  - [x] `int humidity` — relative humidity %.
+  - [x] `double wind_speed` — wind speed in km/h.
+  - [x] `int weather_code` — WMO weather interpretation code.
+  - [x] `double daily_max` — today's forecast high in °C.
+  - [x] `double daily_min` — today's forecast low in °C.
+- [x] Create `src/model/weather_data.cpp` (initially empty / stub definition file).
+- [x] **Files changed:** `src/model/weather_data.hpp` (new), `src/model/weather_data.cpp` (new).
+
+#### Step 16.1.3 — WMO Code → Icon & Description Mapping (`weather_icon.hpp/.cpp`)
+- [ ] Create `src/view/weather_icon.hpp` declaring `WeatherIcon` with two static methods:
+  - [ ] `static const std::vector<std::string>& GetIcon(int wmo_code)` — returns the matching icon constant from `weather_icons.hpp`.
+  - [ ] `static std::string GetDescription(int wmo_code)` — returns a human-readable condition string.
+- [ ] Create `src/view/weather_icon.cpp` implementing WMO grouping logic:
+  - [ ] `0` → `kSunny`, `"Clear Sky"`
+  - [ ] `1, 2` → `kSunny`, `"Mainly Clear"` / `"Partly Cloudy"`
+  - [ ] `3` → `kCloudy`, `"Overcast"`
+  - [ ] `45, 48` → `kCloudy`, `"Foggy"`
+  - [ ] `51–57` → `kRainy`, `"Drizzle"`
+  - [ ] `61–67` → `kRainy`, `"Light Rain"` / `"Rain"` / `"Heavy Rain"`
+  - [ ] `71–77` → `kSnowy`, `"Snow"`
+  - [ ] `80–82` → `kRainy`, `"Rain Showers"`
+  - [ ] `85, 86` → `kSnowy`, `"Snow Showers"`
+  - [ ] `95` → `kStormy`, `"Thunderstorm"`
+  - [ ] `96, 99` → `kStormy`, `"Thunderstorm w/ Hail"`
+  - [ ] _(fallback)_ → `kCloudy`, `"Unknown"`
+- [ ] **Files changed:** `src/view/weather_icon.hpp` (new), `src/view/weather_icon.cpp` (new).
+
+#### Step 16.1.4 — Implement `WeatherService::FetchCurrentConditions` (`weather_service.hpp/.cpp`)
+- [ ] Create `src/service/weather_service.hpp` declaring `WeatherService` with:
+  - [ ] `static std::optional<CurrentConditions> FetchCurrentConditions(double latitude, double longitude)`.
+  - [ ] Private `static CurrentConditions ParseCurrentConditions(const std::string& json_str)`.
+- [ ] Create `src/service/weather_service.cpp`:
+  - [ ] Compose the Open-Meteo forecast URL using `std::format` and the constants from Step 16.1.1.
+  - [ ] Call `HttpClient::Fetch` (existing) to make the GET request.
+  - [ ] Parse the `current` and `daily` JSON blocks via `nlohmann/json` into `CurrentConditions`.
+  - [ ] Return `std::nullopt` on network error or parse exception (catch and swallow).
+- [ ] **Files changed:** `src/service/weather_service.hpp` (new), `src/service/weather_service.cpp` (new).
+
+#### Step 16.1.5 — `ForecastController` Sub-Controller & `AppState` Extension
+- [ ] Add `std::optional<CurrentConditions> current_conditions = std::nullopt` to `src/model/app_state.hpp`.
+- [ ] Create `src/controller/forecast_controller.hpp` and `src/controller/forecast_controller.cpp`:
+  - [ ] Constructor takes `AppState&`.
+  - [ ] `void Refresh()` — sets `state_.is_loading = true`, spawns a background thread that calls `WeatherService::FetchCurrentConditions(state_.latitude, state_.longitude)`, writes result into `state_.current_conditions`, clears `state_.is_loading`. Uses an `std::atomic<uint64_t>` sequence counter (same pattern as `LocationController`) to discard stale responses.
+- [ ] Update `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp`:
+  - [ ] Take `ForecastController&` in the constructor.
+  - [ ] `RefreshForecast()` now delegates to `forecast_controller_.Refresh()`.
+  - [ ] Expose `ForecastController& GetForecastController()`.
+- [ ] Update `src/main.cpp`:
+  - [ ] Instantiate `ForecastController` and wire it into `AppController`.
+  - [ ] Call `forecast_controller.Refresh()` once on startup (triggers the first background fetch).
+- [ ] **Files changed:** `src/model/app_state.hpp`, `src/controller/forecast_controller.hpp` (new), `src/controller/forecast_controller.cpp` (new), `src/controller/app_controller.hpp`, `src/controller/app_controller.cpp`, `src/main.cpp`.
+
+#### Step 16.1.6 — Wire Live Data Into the Summary Panel (`app.cpp`)
+- [ ] Replace all three hardcoded mock variables in the summary panel in `src/view/app.cpp` with values from `state_.current_conditions` (`std::optional`), falling back to `0.0` / `0` when `nullopt`:
+  - [ ] `current_temp`, `max_temp`, `min_temp`, `humidity`, `wind_speed_v`, `wmo_code`.
+- [ ] Replace the static `icons::kRainy` icon with `WeatherIcon::GetIcon(wmo_code)`.
+- [ ] Replace the hardcoded `"Condition: Light Rain"` string with `"Condition: " + WeatherIcon::GetDescription(wmo_code)`.
+- [ ] Replace the mock wind speed calculation (`8 + (selected_hour * 2) % 20`) in the summary panel with `cc->wind_speed` (hourly slider mock values stay — those are Phase 16.2 scope).
+- [ ] Show `"Loading..."` in the condition line when `state_.is_loading` is `true`.
+- [ ] Add `#include "view/weather_icon.hpp"` to `src/view/app.hpp`.
+- [ ] **Files changed:** `src/view/app.cpp`, `src/view/app.hpp`.
+
+#### Step 16.1.7 — CMake Integration & Tests
+- [ ] Update `CMakeLists.txt`:
+  - [ ] Add `src/model/weather_data.cpp` and `src/service/weather_service.cpp` to `weather_lib`.
+  - [ ] Add `src/controller/forecast_controller.cpp` to `controller_lib`.
+  - [ ] Add `src/view/weather_icon.cpp` to `app_lib`.
+  - [ ] Add four new test source files to `run_tests`.
+- [ ] Create `tests/model/test_weather_data.cpp` — verify `CurrentConditions` struct default-initialises correctly.
+- [ ] Create `tests/service/test_weather_service.cpp` — verify `ParseCurrentConditions` with mock JSON strings (valid response, missing fields, malformed JSON).
+- [ ] Create `tests/controller/test_forecast_controller.cpp` — verify `Refresh()` writes `CurrentConditions` into `AppState`; verify stale fetch is discarded via sequence counter.
+- [ ] Create `tests/view/test_weather_icon.cpp` — verify `GetIcon()` returns correct icon vector for representative WMO codes; verify `GetDescription()` returns correct strings; verify fallback for unknown code.
+- [ ] Build (`cmake --build build`) and run (`./build/run_tests`) — all tests green.
+- [ ] **Files changed:** `CMakeLists.txt`, 4 new test files under `tests/`.
+
+
+### Phase 16.2 — Hourly Forecast Fetch & Slider Data
+- [ ] Add `HourlyData` struct to `src/model/weather_data.hpp` with per-hour vectors for temperature, rain probability, and wind speed.
+- [ ] Extend `WeatherService` with `FetchHourlyForecast(double lat, double lon)` returning `std::optional<HourlyData>` for a 7-day / 168-hour window.
+- [ ] Add `std::optional<HourlyData> hourly_data` to `AppState`.
+- [ ] Update `ForecastController::Refresh()` to also fetch hourly data in the same background call.
+- [ ] Wire `hourly_data` into the hourly detail panel and timeline slider in `app.cpp` — replacing mock temperature/rain/wind calculations.
+- [ ] Add Catch2 tests for hourly JSON parsing and controller wiring.
+
+
+### Phase 16.3 — SQLite Forecast Cache
+- [ ] Add a `ForecastCache` class (or extend `WeatherService`) with TTL-based read/write using the existing SQLite3 connection.
+- [ ] Cache key: `latitude + longitude + date string`.
+- [ ] Before each network fetch, query the cache; skip the HTTP call if a valid record exists within `kCacheTtlSeconds`.
+- [ ] Add `tests/service/test_forecast_cache.cpp` verifying cache hit / miss / TTL expiry logic using an in-memory SQLite database.
+
+
+### Phase 16.4 — Full Integration, Tests & Clang-Format Verification
+- [ ] Full build pipeline: all targets compile cleanly.
+- [ ] All Catch2 test suites pass (`./build/run_tests`).
+- [ ] `clang-format --dry-run --Werror src/**/*.cpp src/**/*.hpp tests/**/*.cpp` passes with zero violations.
+- [ ] Update `docs/separation-of-concerns.md` Mermaid diagrams and layer descriptions to reflect `WeatherService`, `ForecastController`, and `ForecastCache` additions.
 
 ### Phase 17 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
 - [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.

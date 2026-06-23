@@ -9,10 +9,11 @@ namespace weather_cli {
 class LocationController;
 class AboutController;
 class DatabaseController;
+class ForecastController;
 
 class AppController {
 public:
-    AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, DatabaseController& db_controller, std::function<void()> on_quit);
+    AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, DatabaseController& db_controller, ForecastController& forecast_controller, std::function<void()> on_quit);
 
     // Coordinate actions triggered by the TUI View
     void ToggleUnits();
@@ -41,11 +42,15 @@ public:
     DatabaseController& GetDatabaseController();
     const DatabaseController& GetDatabaseController() const;
 
+    ForecastController& GetForecastController();
+    const ForecastController& GetForecastController() const;
+
 private:
     AppState& state_;
     LocationController& location_controller_;
     AboutController& about_controller_;
     DatabaseController& db_controller_;
+    ForecastController& forecast_controller_;
     std::function<void()> on_quit_;
 };
 

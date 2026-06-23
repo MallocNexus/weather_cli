@@ -1,5 +1,7 @@
 #pragma once
 
+#include "model/weather_data.hpp"
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,6 +31,9 @@ struct AppState {
 
     // Timeline timeline index
     int selected_hour_index = 9; // Default to 9:00 AM (0 to 23 range)
+
+    // Live current conditions — nullopt until the first background fetch completes.
+    std::optional<CurrentConditions> current_conditions = std::nullopt;
 };
 
 

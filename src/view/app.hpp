@@ -8,6 +8,7 @@
 #include "model/app_state.hpp"
 #include "view/about_view.hpp"
 #include "view/location_search_view.hpp"
+#include "view/weather_icon.hpp"
 
 namespace weather_cli {
 

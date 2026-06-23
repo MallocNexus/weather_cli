@@ -6,7 +6,6 @@
 #include <ftxui/component/component.hpp>
 #include "util/formatting.hpp"
 #include "util/constants.hpp"
-#include "view/icons/weather_icons.hpp"
 #include "controller/db_controller.hpp"
 
 using namespace ftxui;
@@ -124,22 +123,42 @@ App::App(AppState& state, AppController& controller)
             root_tab_selected_ = 0;
         }
 
-        double current_temp = 18.5;
-        double max_temp = 21.0;
-        double min_temp = 12.5;
+        // Unpack the optional once — cc is null while loading or on error.
+        const CurrentConditions* cc =
+            state_.current_conditions.has_value()
+                ? &state_.current_conditions.value()
+                : nullptr;
+
+        const double current_temp = cc ? cc->temperature : 0.0;
+        const double max_temp     = cc ? cc->daily_max   : 0.0;
+        const double min_temp     = cc ? cc->daily_min   : 0.0;
+        const int    humidity     = cc ? cc->humidity    : 0;
+        const double wind_speed_v = cc ? cc->wind_speed  : 0.0;
+        const int    wmo_code     = cc ? cc->weather_code : 0;
 
         // Dynamic detail metrics calculator based on slider scrubbing
         int selected_hour = state_.selected_hour_index;
-        double hour_temp = 15.0 + (selected_hour % 7);
-        int rain_prob = (selected_hour * 4) % 100;
-        int wind_speed = 8 + (selected_hour * 2) % 20;
+        double hour_temp  = 15.0 + (selected_hour % 7);
+        int rain_prob     = (selected_hour * 4) % 100;
+        // Hourly wind stays mocked until Phase 16.2 wires real hourly data.
+        int wind_speed_hourly = 8 + (selected_hour * 2) % 20;
 
-        // Static weather ASCII cloud representation
+        // ASCII icon — driven by live WMO code via WeatherIcon.
         Elements icon_lines;
-        for (const auto& line : icons::kRainy) {
+        for (const auto& line : WeatherIcon::GetIcon(wmo_code)) {
             icon_lines.push_back(text(line) | color(Color::BlueLight));
         }
         auto weather_icon_element = vbox(std::move(icon_lines));
+
+        // Condition string — live WMO description, or loading/error fallback.
+        std::string condition_str;
+        if (state_.is_loading) {
+            condition_str = "Loading...";
+        } else if (state_.has_error) {
+            condition_str = "Error: " + state_.error_message;
+        } else {
+            condition_str = WeatherIcon::GetDescription(wmo_code);
+        }
 
         // Weather text metrics summary
         auto summary_panel = hbox({
@@ -147,8 +166,8 @@ App::App(AppState& state, AppController& controller)
             separator(),
             vbox({
                 text("Current Temperature: " + FormatTemperature(current_temp, state_.is_celsius)) | bold,
-                text("Condition: Light Rain"),
-                text("Wind: " + std::to_string(wind_speed) + (state_.is_celsius ? " km/h" : " mph") + "  Humidity: 85%"),
+                text("Condition: " + condition_str),
+                text("Wind: " + std::to_string(static_cast<int>(wind_speed_v)) + (state_.is_celsius ? " km/h" : " mph") + "  Humidity: " + std::to_string(humidity) + "%"),
                 text("Daily Max: " + FormatTemperature(max_temp, state_.is_celsius) + "  Min: " + FormatTemperature(min_temp, state_.is_celsius)),
             }) | size(WIDTH, GREATER_THAN, 40)
         });
@@ -211,8 +230,8 @@ App::App(AppState& state, AppController& controller)
                 text(std::string("Selected Hour Summary (") + (selected_hour < 10 ? "0" : "") + std::to_string(selected_hour) + ":00):") | bold,
                 text("  Temp: " + FormatTemperature(hour_temp, state_.is_celsius) + 
                      "  Rain Probability: " + std::to_string(rain_prob) + "%" +
-                     "  Wind: " + std::to_string(wind_speed) + (state_.is_celsius ? " km/h" : " mph") +
-                     "  Condition: Light Rain")
+                     "  Wind: " + std::to_string(wind_speed_hourly) + (state_.is_celsius ? " km/h" : " mph") +
+                     "  Condition: " + condition_str)
             }) | border
         });
 

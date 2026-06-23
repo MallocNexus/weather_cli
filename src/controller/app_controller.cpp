@@ -2,12 +2,13 @@
 #include "controller/location_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
+#include "controller/forecast_controller.hpp"
 #include <mutex>
 
 namespace weather_cli {
 
-AppController::AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, DatabaseController& db_controller, std::function<void()> on_quit)
-    : state_(state), location_controller_(location_controller), about_controller_(about_controller), db_controller_(db_controller), on_quit_(on_quit) {}
+AppController::AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, DatabaseController& db_controller, ForecastController& forecast_controller, std::function<void()> on_quit)
+    : state_(state), location_controller_(location_controller), about_controller_(about_controller), db_controller_(db_controller), forecast_controller_(forecast_controller), on_quit_(on_quit) {}
 
 void AppController::ToggleUnits() {
     state_.is_celsius = !state_.is_celsius;
@@ -22,8 +23,7 @@ void AppController::UpdateSliderIndex(int index) {
 }
 
 void AppController::RefreshForecast() {
-    state_.is_loading = true;
-    state_.is_loading = false;
+    forecast_controller_.Refresh();
 }
 
 void AppController::SearchCity(const std::string& query) {
@@ -98,6 +98,14 @@ DatabaseController& AppController::GetDatabaseController() {
 
 const DatabaseController& AppController::GetDatabaseController() const {
     return db_controller_;
+}
+
+ForecastController& AppController::GetForecastController() {
+    return forecast_controller_;
+}
+
+const ForecastController& AppController::GetForecastController() const {
+    return forecast_controller_;
 }
 
 }  // namespace weather_cli

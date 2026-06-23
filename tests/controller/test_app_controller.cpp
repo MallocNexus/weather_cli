@@ -2,6 +2,7 @@
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
 #include "controller/about_controller.hpp"
+#include "controller/forecast_controller.hpp"
 #include "model/app_state.hpp"
 #include "model/about_state.hpp"
 
@@ -21,7 +22,8 @@ TEST_CASE("AppController Actions", "[controller][app]") {
     LocationController location_controller(state, db_controller, []() {});
     AboutState about_state;
     AboutController about_controller(about_state, []() {});
-    AppController controller(state, location_controller, about_controller, db_controller, on_quit);
+    ForecastController forecast_controller(state, []() {});
+    AppController controller(state, location_controller, about_controller, db_controller, forecast_controller, on_quit);
 
     SECTION("Initial AppState configuration matches defaults") {
         REQUIRE(state.is_celsius);
@@ -52,9 +54,12 @@ TEST_CASE("AppController Actions", "[controller][app]") {
         REQUIRE(state.selected_hour_index == 15);
     }
 
-    SECTION("RefreshForecast runs (temporary stub test)") {
-        controller.RefreshForecast();
+    SECTION("RefreshForecast delegates to ForecastController (issues background fetch)") {
+        // RefreshForecast sets is_loading = true synchronously before the
+        // background thread fires, so we can observe that transition.
         REQUIRE_FALSE(state.is_loading);
+        controller.RefreshForecast();
+        REQUIRE(state.is_loading);
     }
 
     SECTION("SearchCity updates city name in state") {
@@ -151,5 +156,12 @@ TEST_CASE("AppController Actions", "[controller][app]") {
 
         const auto& const_controller = controller;
         REQUIRE(&const_controller.GetDatabaseController() == &db_controller);
+    }
+
+    SECTION("GetForecastController returns internal controller reference") {
+        REQUIRE(&controller.GetForecastController() == &forecast_controller);
+
+        const auto& const_controller = controller;
+        REQUIRE(&const_controller.GetForecastController() == &forecast_controller);
     }
 }

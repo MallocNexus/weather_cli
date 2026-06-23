@@ -17,6 +17,7 @@
 #include "controller/location_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
+#include "controller/forecast_controller.hpp"
 #include "service/geocoding_service.hpp"
 #include "view/app.hpp"
 #include "util/constants.hpp"
@@ -92,9 +93,16 @@ int main(int argc, char* argv[]) {
             screen.PostEvent(ftxui::Event::Custom);
         });
 
-        AppController controller(state, loc_controller, about_controller, db_controller, screen.ExitLoopClosure());
+        ForecastController forecast_controller(state, [&screen] {
+            screen.PostEvent(ftxui::Event::Custom);
+        });
+
+        AppController controller(state, loc_controller, about_controller, db_controller, forecast_controller, screen.ExitLoopClosure());
 
         App app(state, controller);
+
+        // Trigger the initial weather fetch before entering the render loop.
+        forecast_controller.Refresh();
 
         screen.Loop(app.GetComponent());
         return EXIT_SUCCESS;

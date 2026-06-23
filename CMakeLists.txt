@@ -81,6 +81,7 @@ add_library(controller_lib STATIC
     src/controller/location_controller.cpp
     src/controller/about_controller.cpp
     src/controller/db_controller.cpp
+    src/controller/forecast_controller.cpp
 )
 target_include_directories(controller_lib PUBLIC src/)
 target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
@@ -113,15 +114,19 @@ target_link_libraries(weather_cli PRIVATE app_lib)
 # ---------------------------------------------------------------------------
 add_executable(run_tests
     tests/test_main.cpp
+    tests/model/test_weather_data.cpp
     tests/service/test_http_client.cpp
     tests/service/test_geocoding_service.cpp
     tests/service/test_zippopotam_service.cpp
+    tests/service/test_weather_service.cpp
     tests/controller/test_location_controller.cpp
     tests/controller/test_app_controller.cpp
     tests/controller/test_about_controller.cpp
     tests/controller/test_db_controller.cpp
+    tests/controller/test_forecast_controller.cpp
     tests/util/test_formatting.cpp
     tests/view/test_app.cpp
+    tests/view/test_weather_icon.cpp
 )
 target_include_directories(run_tests PUBLIC src/)
 target_link_libraries(run_tests PRIVATE

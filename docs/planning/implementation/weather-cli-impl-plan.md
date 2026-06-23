@@ -434,7 +434,7 @@ Add support for searching by city name via the CLI using a new `--city` flag (e.
   - [x] Document the new `--city` flag in the CLI Usage section.
   - [x] Provide an example using the `--city` flag with a multi-word city name wrapped in quotes.
 
-### Phase 16.1 — Current Conditions Fetch & Icon Rendering
+### Phase 16.1 — Current Conditions Fetch & Icon Rendering ✅ Done
 Wire the Open-Meteo API for live current conditions and drive the ASCII icon in the summary panel from `weather_icons.hpp` using the returned WMO weather code.
 
 #### Step 16.1.1 — Add Forecast API Constants (`constants.hpp`) ✅ Done
@@ -487,42 +487,42 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
   - [x] Return `std::nullopt` on network error or parse exception (catch and swallow).
 - [x] **Files changed:** `src/service/weather_service.hpp` (new), `src/service/weather_service.cpp` (new).
 
-#### Step 16.1.5 — `ForecastController` Sub-Controller & `AppState` Extension
-- [ ] Add `std::optional<CurrentConditions> current_conditions = std::nullopt` to `src/model/app_state.hpp`.
-- [ ] Create `src/controller/forecast_controller.hpp` and `src/controller/forecast_controller.cpp`:
-  - [ ] Constructor takes `AppState&`.
-  - [ ] `void Refresh()` — sets `state_.is_loading = true`, spawns a background thread that calls `WeatherService::FetchCurrentConditions(state_.latitude, state_.longitude)`, writes result into `state_.current_conditions`, clears `state_.is_loading`. Uses an `std::atomic<uint64_t>` sequence counter (same pattern as `LocationController`) to discard stale responses.
-- [ ] Update `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp`:
-  - [ ] Take `ForecastController&` in the constructor.
-  - [ ] `RefreshForecast()` now delegates to `forecast_controller_.Refresh()`.
-  - [ ] Expose `ForecastController& GetForecastController()`.
-- [ ] Update `src/main.cpp`:
-  - [ ] Instantiate `ForecastController` and wire it into `AppController`.
-  - [ ] Call `forecast_controller.Refresh()` once on startup (triggers the first background fetch).
-- [ ] **Files changed:** `src/model/app_state.hpp`, `src/controller/forecast_controller.hpp` (new), `src/controller/forecast_controller.cpp` (new), `src/controller/app_controller.hpp`, `src/controller/app_controller.cpp`, `src/main.cpp`.
+#### Step 16.1.5 — `ForecastController` Sub-Controller & `AppState` Extension ✅ Done
+- [x] Add `std::optional<CurrentConditions> current_conditions = std::nullopt` to `src/model/app_state.hpp`.
+- [x] Create `src/controller/forecast_controller.hpp` and `src/controller/forecast_controller.cpp`:
+  - [x] Constructor takes `AppState&`.
+  - [x] `void Refresh()` — sets `state_.is_loading = true`, spawns a background thread that calls `WeatherService::FetchCurrentConditions(state_.latitude, state_.longitude)`, writes result into `state_.current_conditions`, clears `state_.is_loading`. Uses an `std::atomic<uint64_t>` sequence counter (same pattern as `LocationController`) to discard stale responses.
+- [x] Update `src/controller/app_controller.hpp` and `src/controller/app_controller.cpp`:
+  - [x] Take `ForecastController&` in the constructor.
+  - [x] `RefreshForecast()` now delegates to `forecast_controller_.Refresh()`.
+  - [x] Expose `ForecastController& GetForecastController()`.
+- [x] Update `src/main.cpp`:
+  - [x] Instantiate `ForecastController` and wire it into `AppController`.
+  - [x] Call `forecast_controller.Refresh()` once on startup (triggers the first background fetch).
+- [x] **Files changed:** `src/model/app_state.hpp`, `src/controller/forecast_controller.hpp` (new), `src/controller/forecast_controller.cpp` (new), `src/controller/app_controller.hpp`, `src/controller/app_controller.cpp`, `src/main.cpp`.
 
-#### Step 16.1.6 — Wire Live Data Into the Summary Panel (`app.cpp`)
-- [ ] Replace all three hardcoded mock variables in the summary panel in `src/view/app.cpp` with values from `state_.current_conditions` (`std::optional`), falling back to `0.0` / `0` when `nullopt`:
-  - [ ] `current_temp`, `max_temp`, `min_temp`, `humidity`, `wind_speed_v`, `wmo_code`.
-- [ ] Replace the static `icons::kRainy` icon with `WeatherIcon::GetIcon(wmo_code)`.
-- [ ] Replace the hardcoded `"Condition: Light Rain"` string with `"Condition: " + WeatherIcon::GetDescription(wmo_code)`.
-- [ ] Replace the mock wind speed calculation (`8 + (selected_hour * 2) % 20`) in the summary panel with `cc->wind_speed` (hourly slider mock values stay — those are Phase 16.2 scope).
-- [ ] Show `"Loading..."` in the condition line when `state_.is_loading` is `true`.
-- [ ] Add `#include "view/weather_icon.hpp"` to `src/view/app.hpp`.
-- [ ] **Files changed:** `src/view/app.cpp`, `src/view/app.hpp`.
+#### Step 16.1.6 — Wire Live Data Into the Summary Panel (`app.cpp`) ✅ Done
+- [x] Replace all three hardcoded mock variables in the summary panel in `src/view/app.cpp` with values from `state_.current_conditions` (`std::optional`), falling back to `0.0` / `0` when `nullopt`:
+  - [x] `current_temp`, `max_temp`, `min_temp`, `humidity`, `wind_speed_v`, `wmo_code`.
+- [x] Replace the static `icons::kRainy` icon with `WeatherIcon::GetIcon(wmo_code)`.
+- [x] Replace the hardcoded `"Condition: Light Rain"` string with `"Condition: " + WeatherIcon::GetDescription(wmo_code)`.
+- [x] Replace the mock wind speed calculation (`8 + (selected_hour * 2) % 20`) in the summary panel with `cc->wind_speed` (hourly slider mock values stay — those are Phase 16.2 scope).
+- [x] Show `"Loading..."` in the condition line when `state_.is_loading` is `true`.
+- [x] Add `#include "view/weather_icon.hpp"` to `src/view/app.hpp`.
+- [x] **Files changed:** `src/view/app.cpp`, `src/view/app.hpp`.
 
-#### Step 16.1.7 — CMake Integration & Tests
-- [ ] Update `CMakeLists.txt`:
-  - [ ] Add `src/model/weather_data.cpp` and `src/service/weather_service.cpp` to `weather_lib`.
-  - [ ] Add `src/controller/forecast_controller.cpp` to `controller_lib`.
-  - [ ] Add `src/view/weather_icon.cpp` to `app_lib`.
-  - [ ] Add four new test source files to `run_tests`.
-- [ ] Create `tests/model/test_weather_data.cpp` — verify `CurrentConditions` struct default-initialises correctly.
-- [ ] Create `tests/service/test_weather_service.cpp` — verify `ParseCurrentConditions` with mock JSON strings (valid response, missing fields, malformed JSON).
-- [ ] Create `tests/controller/test_forecast_controller.cpp` — verify `Refresh()` writes `CurrentConditions` into `AppState`; verify stale fetch is discarded via sequence counter.
-- [ ] Create `tests/view/test_weather_icon.cpp` — verify `GetIcon()` returns correct icon vector for representative WMO codes; verify `GetDescription()` returns correct strings; verify fallback for unknown code.
-- [ ] Build (`cmake --build build`) and run (`./build/run_tests`) — all tests green.
-- [ ] **Files changed:** `CMakeLists.txt`, 4 new test files under `tests/`.
+#### Step 16.1.7 — CMake Integration & Tests ✅ Done
+- [x] Update `CMakeLists.txt`:
+  - [x] Add `src/model/weather_data.cpp` and `src/service/weather_service.cpp` to `weather_lib`.
+  - [x] Add `src/controller/forecast_controller.cpp` to `controller_lib`.
+  - [x] Add `src/view/weather_icon.cpp` to `app_lib`.
+  - [x] Add four new test source files to `run_tests`.
+- [x] Create `tests/model/test_weather_data.cpp` — verify `CurrentConditions` struct default-initialises correctly.
+- [x] Create `tests/service/test_weather_service.cpp` — verify `ParseCurrentConditions` with mock JSON strings (valid response, missing fields, malformed JSON).
+- [x] Create `tests/controller/test_forecast_controller.cpp` — verify `Refresh()` writes `CurrentConditions` into `AppState`; verify stale fetch is discarded via sequence counter.
+- [x] Create `tests/view/test_weather_icon.cpp` — verify `GetIcon()` returns correct icon vector for representative WMO codes; verify `GetDescription()` returns correct strings; verify fallback for unknown code.
+- [x] Build (`cmake --build build`) and run (`./build/run_tests`) — all tests green.
+- [x] **Files changed:** `CMakeLists.txt`, 4 new test files under `tests/`.
 
 
 ### Phase 16.2 — Hourly Forecast Fetch & Slider Data

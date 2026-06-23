@@ -4,6 +4,7 @@
 #include "controller/location_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
+#include "controller/forecast_controller.hpp"
 #include "model/app_state.hpp"
 #include "model/about_state.hpp"
 #include "model/location_repository.hpp"
@@ -18,7 +19,8 @@ TEST_CASE("App View Layout Component Verification", "[view][app]") {
     LocationController loc_controller(state, db_controller, []() {});
     AboutState about_state;
     AboutController about_controller(about_state, []() {});
-    AppController controller(state, loc_controller, about_controller, db_controller, []() {});
+    ForecastController forecast_controller(state, []() {});
+    AppController controller(state, loc_controller, about_controller, db_controller, forecast_controller, []() {});
 
     SECTION("App view constructor and component retrieval succeed") {
         App app(state, controller);

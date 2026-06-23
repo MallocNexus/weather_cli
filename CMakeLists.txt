@@ -63,6 +63,7 @@ add_library(weather_lib STATIC
     src/service/http_client.cpp
     src/service/geocoding_service.cpp
     src/service/zippopotam_service.cpp
+    src/service/weather_service.cpp
 )
 target_include_directories(weather_lib PUBLIC src/)
 target_link_libraries(weather_lib PUBLIC

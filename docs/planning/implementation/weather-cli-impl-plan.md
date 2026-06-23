@@ -476,16 +476,16 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
   - [x] _(fallback)_ → `kCloudy`, `"Unknown"`
 - [x] **Files changed:** `src/view/weather_icon.hpp` (new), `src/view/weather_icon.cpp` (new).
 
-#### Step 16.1.4 — Implement `WeatherService::FetchCurrentConditions` (`weather_service.hpp/.cpp`)
-- [ ] Create `src/service/weather_service.hpp` declaring `WeatherService` with:
-  - [ ] `static std::optional<CurrentConditions> FetchCurrentConditions(double latitude, double longitude)`.
-  - [ ] Private `static CurrentConditions ParseCurrentConditions(const std::string& json_str)`.
-- [ ] Create `src/service/weather_service.cpp`:
-  - [ ] Compose the Open-Meteo forecast URL using `std::format` and the constants from Step 16.1.1.
-  - [ ] Call `HttpClient::Fetch` (existing) to make the GET request.
-  - [ ] Parse the `current` and `daily` JSON blocks via `nlohmann/json` into `CurrentConditions`.
-  - [ ] Return `std::nullopt` on network error or parse exception (catch and swallow).
-- [ ] **Files changed:** `src/service/weather_service.hpp` (new), `src/service/weather_service.cpp` (new).
+#### Step 16.1.4 — Implement `WeatherService::FetchCurrentConditions` (`weather_service.hpp/.cpp`) ✅ Done
+- [x] Create `src/service/weather_service.hpp` declaring `WeatherService` with:
+  - [x] `static std::optional<CurrentConditions> FetchCurrentConditions(double latitude, double longitude)`.
+  - [x] Private `static CurrentConditions ParseCurrentConditions(const std::string& json_str)`.
+- [x] Create `src/service/weather_service.cpp`:
+  - [x] Compose the Open-Meteo forecast URL using `std::format` and the constants from Step 16.1.1.
+  - [x] Call `HttpClient::Fetch` (existing) to make the GET request.
+  - [x] Parse the `current` and `daily` JSON blocks via `nlohmann/json` into `CurrentConditions`.
+  - [x] Return `std::nullopt` on network error or parse exception (catch and swallow).
+- [x] **Files changed:** `src/service/weather_service.hpp` (new), `src/service/weather_service.cpp` (new).
 
 #### Step 16.1.5 — `ForecastController` Sub-Controller & `AppState` Extension
 - [ ] Add `std::optional<CurrentConditions> current_conditions = std::nullopt` to `src/model/app_state.hpp`.

@@ -26,6 +26,10 @@ struct CurrentConditions {
 
     // Today's forecast minimum temperature, in degrees Celsius.
     double daily_min = 0.0;
+
+    // 1 when the current time is daytime at the queried location, 0 at night.
+    // Sourced from the Open-Meteo `is_day` current variable.
+    int is_day = 1;
 };
 
 }  // namespace weather_cli

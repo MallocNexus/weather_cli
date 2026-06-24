@@ -135,6 +135,7 @@ App::App(AppState& state, AppController& controller)
         const int    humidity     = cc ? cc->humidity    : 0;
         const double wind_speed_v = cc ? cc->wind_speed  : 0.0;
         const int    wmo_code     = cc ? cc->weather_code : 0;
+        const int    is_day       = cc ? cc->is_day       : 1;
 
         // Dynamic detail metrics calculator based on slider scrubbing
         int selected_hour = state_.selected_hour_index;
@@ -143,9 +144,9 @@ App::App(AppState& state, AppController& controller)
         // Hourly wind stays mocked until Phase 16.2 wires real hourly data.
         int wind_speed_hourly = 8 + (selected_hour * 2) % 20;
 
-        // ASCII icon — driven by live WMO code via WeatherIcon.
+        // ASCII icon — driven by live WMO code + day/night via WeatherIcon.
         Elements icon_lines;
-        for (const auto& line : WeatherIcon::GetIcon(wmo_code)) {
+        for (const auto& line : WeatherIcon::GetIcon(wmo_code, is_day)) {
             icon_lines.push_back(text(line) | color(Color::BlueLight));
         }
         auto weather_icon_element = vbox(std::move(icon_lines));

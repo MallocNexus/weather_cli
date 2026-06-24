@@ -74,12 +74,26 @@ TEST_CASE("WeatherIcon::GetIcon", "[view][weather_icon]") {
         REQUIRE(WeatherIcon::GetIcon(-1)  == icons::kCloudy);
     }
 
+    SECTION("WMO 0 returns kClearNight when is_day == 0") {
+        REQUIRE(WeatherIcon::GetIcon(0, 0) == icons::kClearNight);
+        REQUIRE(WeatherIcon::GetIcon(1, 0) == icons::kClearNight);
+        REQUIRE(WeatherIcon::GetIcon(2, 0) == icons::kClearNight);
+    }
+
+    SECTION("WMO 0/1/2 returns kSunny when is_day == 1 (default)") {
+        REQUIRE(WeatherIcon::GetIcon(0, 1) == icons::kSunny);
+        REQUIRE(WeatherIcon::GetIcon(1, 1) == icons::kSunny);
+        REQUIRE(WeatherIcon::GetIcon(2)    == icons::kSunny);  // default is_day=1
+    }
+
     SECTION("Returned icon vectors have at least 4 lines") {
         // kSunny has 5 lines; all others have 4. Verify no lookup returns
         // a partial or empty icon.
         for (int code : {0, 1, 2, 3, 45, 48, 51, 61, 71, 80, 85, 95, 96, 99}) {
             REQUIRE(WeatherIcon::GetIcon(code).size() >= 4);
         }
+        // Also verify kClearNight (night path)
+        REQUIRE(WeatherIcon::GetIcon(0, 0).size() >= 4);
     }
 }
 

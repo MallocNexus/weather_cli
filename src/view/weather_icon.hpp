@@ -13,8 +13,9 @@ namespace weather_cli {
 class WeatherIcon {
 public:
     // Returns the 4-line ASCII art vector for the given WMO code.
+    // is_day should be 1 for daytime, 0 for nighttime (from Open-Meteo `is_day`).
     // Always returns a valid reference — unknown codes fall back to kCloudy.
-    static const std::vector<std::string>& GetIcon(int wmo_code);
+    static const std::vector<std::string>& GetIcon(int wmo_code, int is_day = 1);
 
     // Returns a human-readable condition description for the given WMO code.
     // Unknown codes return "Unknown".

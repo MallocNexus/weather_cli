@@ -15,14 +15,16 @@ static std::string ValidJson(
     double wind       = 26.1,
     int    wmo        = 61,
     double daily_max  = 21.0,
-    double daily_min  = 12.5) {
+    double daily_min  = 12.5,
+    int    is_day     = 1) {
     return R"({
         "current": {
             "temperature_2m":        )" + std::to_string(temp)       + R"(,
             "apparent_temperature":  )" + std::to_string(feels_like) + R"(,
             "relative_humidity_2m":  )" + std::to_string(humidity)   + R"(,
             "wind_speed_10m":        )" + std::to_string(wind)       + R"(,
-            "weather_code":          )" + std::to_string(wmo)        + R"(
+            "weather_code":          )" + std::to_string(wmo)        + R"(,
+            "is_day":                )" + std::to_string(is_day)     + R"(
         },
         "daily": {
             "temperature_2m_max": [)" + std::to_string(daily_max) + R"(],
@@ -75,6 +77,14 @@ TEST_CASE("WeatherService::ParseCurrentConditions", "[service][weather_service]"
             nlohmann::json::out_of_range);
     }
 
+    SECTION("Parses is_day field correctly") {
+        auto day   = WeatherService::ParseCurrentConditions(ValidJson(18.5, 16.2, 85, 26.1, 0, 21.0, 12.5, 1));
+        auto night = WeatherService::ParseCurrentConditions(ValidJson(12.0, 10.0, 90, 10.0, 0, 14.0, 8.0,  0));
+
+        REQUIRE(day.is_day   == 1);
+        REQUIRE(night.is_day == 0);
+    }
+
     SECTION("Throws on missing field inside 'daily'") {
         const std::string json = R"({
             "current": {
@@ -82,7 +92,8 @@ TEST_CASE("WeatherService::ParseCurrentConditions", "[service][weather_service]"
                 "apparent_temperature": 16.2,
                 "relative_humidity_2m": 85,
                 "wind_speed_10m": 26.1,
-                "weather_code": 61
+                "weather_code": 61,
+                "is_day": 1
             },
             "daily": {
                 "temperature_2m_max": [21.0]

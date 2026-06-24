@@ -14,7 +14,7 @@ constexpr std::string_view kForecastApiEndpoint =
     "https://api.open-meteo.com/v1/forecast";
 constexpr std::string_view kCurrentParams =
     "temperature_2m,relative_humidity_2m,wind_speed_10m,"
-    "weather_code,apparent_temperature";
+    "weather_code,apparent_temperature,is_day";
 constexpr std::string_view kDailyParams =
     "temperature_2m_max,temperature_2m_min";
 constexpr std::string_view kForecastTimeZone = "auto";

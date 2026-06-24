@@ -8,12 +8,12 @@ namespace weather_cli {
 // ---------------------------------------------------------------------------
 
 // Returns the icon constant for the given WMO code.
-static const std::vector<std::string>& IconForCode(int wmo_code) {
+static const std::vector<std::string>& IconForCode(int wmo_code, int is_day) {
     // WMO 0: Clear sky
-    if (wmo_code == 0) return icons::kSunny;
+    if (wmo_code == 0) return is_day ? icons::kSunny : icons::kClearNight;
 
     // WMO 1–2: Mainly clear / partly cloudy
-    if (wmo_code == 1 || wmo_code == 2) return icons::kSunny;
+    if (wmo_code == 1 || wmo_code == 2) return is_day ? icons::kSunny : icons::kClearNight;
 
     // WMO 3: Overcast
     if (wmo_code == 3) return icons::kCloudy;
@@ -85,8 +85,8 @@ static std::string DescriptionForCode(int wmo_code) {
 // WeatherIcon public API
 // ---------------------------------------------------------------------------
 
-const std::vector<std::string>& WeatherIcon::GetIcon(int wmo_code) {
-    return IconForCode(wmo_code);
+const std::vector<std::string>& WeatherIcon::GetIcon(int wmo_code, int is_day) {
+    return IconForCode(wmo_code, is_day);
 }
 
 std::string WeatherIcon::GetDescription(int wmo_code) {

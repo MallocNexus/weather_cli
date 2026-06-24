@@ -47,5 +47,13 @@ const std::vector<std::string> kSnowy = {
     "   *  *  *    "
 };
 
+// 6. Clear Night (Crescent moon + stars)
+const std::vector<std::string> kClearNight = {
+    "  .  *    . ",
+    "    .----.  ",
+    "  * ( `)  . ",
+    "   `----'   "
+};
+
 }  // namespace icons
 }  // namespace weather_cli

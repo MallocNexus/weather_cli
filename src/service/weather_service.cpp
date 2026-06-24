@@ -54,6 +54,7 @@ CurrentConditions WeatherService::ParseCurrentConditions(
     cc.humidity     = current.at("relative_humidity_2m").get<int>();
     cc.wind_speed   = current.at("wind_speed_10m").get<double>();
     cc.weather_code = current.at("weather_code").get<int>();
+    cc.is_day       = current.at("is_day").get<int>();
 
     // daily arrays always have at least one entry when forecast_days=1
     cc.daily_max = daily.at("temperature_2m_max").at(0).get<double>();

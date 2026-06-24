@@ -525,7 +525,92 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
 - [x] **Files changed:** `CMakeLists.txt`, 4 new test files under `tests/`.
 
 
-### Phase 16.2 — Hourly Forecast Fetch & Slider Data
+### Phase 16.2 — Country Filter in Location Search Modal
+
+Wire a country filter dropdown/selector into the existing location search modal so that city queries are scoped to a selected country. Default to **Australia (AU)**. The `GeocodingService::Search` already accepts a `country_code` parameter — this phase surfaces it in the UI through a clean model → controller → view path.
+
+---
+
+#### Step 16.2.1 — Extend `LocationSearchState` with Country Filter Fields ✅ Done
+- [x] Add the following fields to `struct LocationSearchState` in `src/model/location_search_state.hpp`:
+  - [x] `std::string country_filter = "AU"` — ISO 3166-1 alpha-2 code passed to `GeocodingService::Search`. Defaults to Australia.
+  - [x] `int country_filter_index = 0` — tracks which entry is selected in the FTXUI dropdown menu (index into `kCountryList`).
+- [x] **Files changed:** `src/model/location_search_state.hpp`.
+
+#### Step 16.2.2 — Add Country List Constant (`constants.hpp`)
+- [ ] Add a `constexpr` ordered array / `std::array` of `{display_label, iso_code}` pairs to `src/util/constants.hpp`:
+  ```cpp
+  struct CountryEntry { std::string_view label; std::string_view code; };
+  constexpr std::array<CountryEntry, N> kCountryList = {{
+      {"Australia",      "AU"},
+      {"United States",  "US"},
+      {"United Kingdom", "GB"},
+      {"Canada",         "CA"},
+      {"New Zealand",    "NZ"},
+      {"Germany",        "DE"},
+      {"France",         "FR"},
+      {"Japan",          "JP"},
+      {"India",          "IN"},
+      {"Brazil",         "BR"},
+      {"Any Country",    ""},   // empty string → no country filter
+  }};
+  ```
+  - [ ] `kCountryList[0]` must be `"AU"` so the default index `0` maps to Australia.
+- [ ] **Files changed:** `src/util/constants.hpp`.
+
+#### Step 16.2.3 — Wire Country Filter Into `LocationController::Search`
+- [ ] Update `LocationController::Search(const std::string& query)` in `src/controller/location_controller.cpp`:
+  - [ ] Read `search_state_.country_filter` (under the mutex) before dispatching the background thread.
+  - [ ] Snapshot it into a local `const std::string country` variable alongside `query` and `search_id`.
+  - [ ] Pass `country` as the second argument to `GeocodingService::Search(query, country)`.
+- [ ] **No change to the public `Search(query)` signature** — the controller reads `country_filter` from its own state, keeping the caller API stable.
+- [ ] **Files changed:** `src/controller/location_controller.cpp`.
+
+#### Step 16.2.4 — Sync Dropdown Selection to `country_filter` in `LocationController`
+- [ ] Add a new public method to `LocationController`:
+  ```cpp
+  void SetCountryFilter(int index);
+  ```
+  - [ ] Validates `index` is within `kCountryList` bounds.
+  - [ ] Under the mutex: sets `search_state_.country_filter_index = index` and `search_state_.country_filter = std::string(kCountryList[index].code)`.
+  - [ ] If `search_state_.search_query` is non-empty, re-triggers `Search(search_state_.search_query)` so results immediately re-filter.
+- [ ] Declare `SetCountryFilter` in `src/controller/location_controller.hpp`.
+- [ ] **Files changed:** `src/controller/location_controller.hpp`, `src/controller/location_controller.cpp`.
+
+#### Step 16.2.5 — Add Country Dropdown to `LocationSearchView`
+- [ ] In `LocationSearchView` (`src/view/location_search_view.cpp` / `.hpp`):
+  - [ ] Add a `std::vector<std::string> country_entries_` member — populated once in the constructor from `kCountryList` display labels.
+  - [ ] Add a `ftxui::Component country_dropdown_` member — created with `ftxui::Dropdown(&country_entries_, &search_state.country_filter_index)`.
+  - [ ] Register an `on_change` callback on the dropdown that calls `controller_.SetCountryFilter(search_state.country_filter_index)`.
+  - [ ] Insert `country_dropdown_` into the `Container::Vertical` between the search input and the save checkbox (tab order: input → country dropdown → save checkbox → suggestions menu).
+  - [ ] In the renderer lambda, add a labelled row above the dropdown:
+    ```
+    text("Country Filter:") | bold
+    country_dropdown_->Render() | border
+    ```
+  - [ ] Update the focus navigation `CatchEvent` handler to route Tab/ArrowDown/ArrowUp through the new dropdown correctly (input → dropdown → checkbox → suggestions).
+- [ ] **Files changed:** `src/view/location_search_view.hpp`, `src/view/location_search_view.cpp`.
+
+#### Step 16.2.6 — Reset Country Filter on `CancelSearch` / `OpenSearch`
+- [ ] In `LocationController::OpenSearch()`: reset `search_state_.country_filter_index = 0` and `search_state_.country_filter = "AU"` so the modal always opens defaulting to Australia.
+- [ ] In `LocationController::CancelSearch()`: reset the same two fields for consistency.
+- [ ] **Files changed:** `src/controller/location_controller.cpp`.
+
+#### Step 16.2.7 — Tests
+- [ ] **`tests/controller/test_location_controller.cpp`** — add sections:
+  - [ ] `SetCountryFilter(0)` sets `country_filter == "AU"` and `country_filter_index == 0`.
+  - [ ] `SetCountryFilter` to a "US" index sets `country_filter == "US"`.
+  - [ ] `SetCountryFilter` to the "Any Country" index sets `country_filter == ""`.
+  - [ ] `SetCountryFilter` with an out-of-bounds index is a no-op.
+  - [ ] `OpenSearch()` resets filter to `"AU"` / index `0`.
+  - [ ] `CancelSearch()` resets filter to `"AU"` / index `0`.
+- [ ] **`tests/util/test_constants.cpp`** (new or extend existing) — verify `kCountryList[0].code == "AU"` and that the list contains an "Any Country" entry with empty code.
+- [ ] Build and run — all tests green.
+- [ ] **Files changed:** `tests/controller/test_location_controller.cpp`, `tests/util/test_constants.cpp`.
+
+---
+
+### Phase 16.3 — Hourly Forecast Fetch & Slider Data
 - [ ] Add `HourlyData` struct to `src/model/weather_data.hpp` with per-hour vectors for temperature, rain probability, and wind speed.
 - [ ] Extend `WeatherService` with `FetchHourlyForecast(double lat, double lon)` returning `std::optional<HourlyData>` for a 7-day / 168-hour window.
 - [ ] Add `std::optional<HourlyData> hourly_data` to `AppState`.
@@ -534,14 +619,14 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
 - [ ] Add Catch2 tests for hourly JSON parsing and controller wiring.
 
 
-### Phase 16.3 — SQLite Forecast Cache
+### Phase 16.4 — SQLite Forecast Cache
 - [ ] Add a `ForecastCache` class (or extend `WeatherService`) with TTL-based read/write using the existing SQLite3 connection.
 - [ ] Cache key: `latitude + longitude + date string`.
 - [ ] Before each network fetch, query the cache; skip the HTTP call if a valid record exists within `kCacheTtlSeconds`.
 - [ ] Add `tests/service/test_forecast_cache.cpp` verifying cache hit / miss / TTL expiry logic using an in-memory SQLite database.
 
 
-### Phase 16.4 — Full Integration, Tests & Clang-Format Verification
+### Phase 16.5 — Full Integration, Tests & Clang-Format Verification
 - [ ] Full build pipeline: all targets compile cleanly.
 - [ ] All Catch2 test suites pass (`./build/run_tests`).
 - [ ] `clang-format --dry-run --Werror src/**/*.cpp src/**/*.hpp tests/**/*.cpp` passes with zero violations.
@@ -557,3 +642,4 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.
 - [ ] Code formatting check using Clang-Format verification.
+

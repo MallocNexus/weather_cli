@@ -537,8 +537,8 @@ Wire a country filter dropdown/selector into the existing location search modal 
   - [x] `int country_filter_index = 0` — tracks which entry is selected in the FTXUI dropdown menu (index into `kCountryList`).
 - [x] **Files changed:** `src/model/location_search_state.hpp`.
 
-#### Step 16.2.2 — Add Country List Constant (`constants.hpp`)
-- [ ] Add a `constexpr` ordered array / `std::array` of `{display_label, iso_code}` pairs to `src/util/constants.hpp`:
+#### Step 16.2.2 — Add Country List Constant (`constants.hpp`) ✅ Done
+- [x] Add a `constexpr` ordered array / `std::array` of `{display_label, iso_code}` pairs to `src/util/constants.hpp`:
   ```cpp
   struct CountryEntry { std::string_view label; std::string_view code; };
   constexpr std::array<CountryEntry, N> kCountryList = {{
@@ -555,8 +555,8 @@ Wire a country filter dropdown/selector into the existing location search modal 
       {"Any Country",    ""},   // empty string → no country filter
   }};
   ```
-  - [ ] `kCountryList[0]` must be `"AU"` so the default index `0` maps to Australia.
-- [ ] **Files changed:** `src/util/constants.hpp`.
+  - [x] `kCountryList[0]` must be `"AU"` so the default index `0` maps to Australia.
+- [x] **Files changed:** `src/util/constants.hpp`.
 
 #### Step 16.2.3 — Wire Country Filter Into `LocationController::Search`
 - [ ] Update `LocationController::Search(const std::string& query)` in `src/controller/location_controller.cpp`:

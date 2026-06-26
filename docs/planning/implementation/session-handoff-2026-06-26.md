@@ -2,7 +2,7 @@
 
 > **Pick up at:** Phase 16.4, Step 16.4.1 — Add `HourlyData` struct to `weather_data.hpp`
 > **Master plan:** [`weather-cli-impl-plan.md`](./weather-cli-impl-plan.md)
-> **Test suite:** `./build/run_tests` → **311 assertions, 17 test cases — all green**
+> **Test suite:** `./build/run_tests` → **324 assertions, 18 test cases — all green**
 
 ---
 
@@ -65,7 +65,7 @@ All 7 steps complete (16.3.1–16.3.7).
 ## 2. Current Test Suite
 
 ```
-./build/run_tests  →  311 assertions in 17 test cases — all passed
+./build/run_tests  →  324 assertions in 18 test cases — all passed
 ```
 
 | Test file | Coverage |
@@ -76,7 +76,8 @@ All 7 steps complete (16.3.1–16.3.7).
 | `tests/service/test_http_client.cpp` | HTTP client |
 | `tests/service/test_zippopotam_service.cpp` | Zip lookup |
 | `tests/controller/test_forecast_controller.cpp` | `Refresh()` lifecycle, loading/error/success states |
-| `tests/controller/test_location_controller.cpp` | Search, select, cancel, `SetCountryFilter`, `TriggerSearch` |
+| `tests/controller/test_location_controller.cpp` | SelectLocation state mutations |
+| `tests/controller/test_location_search_controller.cpp` | Search, select suggestions, cancel, SetCountryFilter, TriggerSearch |
 | `tests/controller/test_app_controller.cpp` | AppController wiring |
 | `tests/controller/test_about_controller.cpp` | About toggle |
 | `tests/controller/test_db_controller.cpp` | DB save/load |
@@ -96,7 +97,8 @@ src/
 │   ├── app_controller.hpp/.cpp
 │   ├── db_controller.hpp/.cpp
 │   ├── forecast_controller.hpp/.cpp      ← Phase 16.1
-│   └── location_controller.hpp/.cpp      ← Phase 16.2/16.3 (TriggerSearch added)
+│   ├── location_controller.hpp/.cpp      ← SelectLocation coordinates coordinator
+│   └── location_search_controller.hpp/.cpp ← Search transient modal logic / background threads
 ├── main.cpp                              ← ForecastController wired + Refresh() on startup
 ├── model/
 │   ├── about_state.hpp
@@ -115,6 +117,8 @@ src/
 └── view/
     ├── about_view.hpp/.cpp
     ├── app.hpp/.cpp                      ← Summary panel wired to live CC data
+    ├── component/
+    │   └── after_event.hpp/.cpp          ← Reusable decorator helper component (OnAfterEvent)
     ├── icons/
     │   └── weather_icons.hpp             ← kSunny kCloudy kRainy kSnowy kStormy kClearNight
     ├── location_search_view.hpp/.cpp     ← country_dropdown_ added; search_button_ added

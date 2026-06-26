@@ -30,9 +30,10 @@ LocationSearchView::LocationSearchView(LocationSearchController& controller)
 
     search_input_option.transform = [](InputState s) {
         if (s.is_placeholder) {
-            s.element |= dim;
+            s.element = dim(s.element);
         }
-        s.element |= (s.focused ? color(Color::Green) : color(Color::White));
+        auto text_color = s.focused ? color(Color::Green) : color(Color::White);
+        s.element = text_color(s.element);
         return s.element;
     };
     search_input_ = Input(search_input_option);
@@ -72,12 +73,10 @@ LocationSearchView::LocationSearchView(LocationSearchController& controller)
         suggestions_menu_
     });
 
-    // Apply navigation event handling directly on the container using |=.
-    // This is the canonical FTXUI pattern (see examples/component/input.cpp
-    // lines 36-41: input_phone_number |= CatchEvent(...)).
+    // Apply navigation event handling directly on the container.
     // Crucially, this keeps search_container as the direct child of Renderer
     // below, preserving the SetActiveChild focus chain intact.
-    search_container |= CatchEvent([this](Event event) -> bool {
+    search_container = CatchEvent(search_container, [this](Event event) -> bool {
         auto& state = controller_.GetSearchState();
         bool show_modal = false;
         {
@@ -170,7 +169,7 @@ LocationSearchView::LocationSearchView(LocationSearchController& controller)
     });
 
     // Renderer(search_container, lambda) — search_container (Container::Vertical
-    // with |= CatchEvent decorator) is the direct child. This is identical to
+    // wrapped in the CatchEvent decorator) is the direct child. This is identical to
     // the official input.cpp and composition.cpp examples. No wrapper sits
     // between Renderer and the Container, so the focus chain is unbroken.
     view_component_ = Renderer(search_container, [this] {

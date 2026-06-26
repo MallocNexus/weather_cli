@@ -525,7 +525,7 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
 - [x] **Files changed:** `CMakeLists.txt`, 4 new test files under `tests/`.
 
 
-### Phase 16.2 — Country Filter in Location Search Modal
+### Phase 16.2 — Country Filter in Location Search Modal ✅ Done
 
 Wire a country filter dropdown/selector into the existing location search modal so that city queries are scoped to a selected country. Default to **Australia (AU)**. The `GeocodingService::Search` already accepts a `country_code` parameter — this phase surfaces it in the UI through a clean model → controller → view path.
 
@@ -558,59 +558,231 @@ Wire a country filter dropdown/selector into the existing location search modal 
   - [x] `kCountryList[0]` must be `"AU"` so the default index `0` maps to Australia.
 - [x] **Files changed:** `src/util/constants.hpp`.
 
-#### Step 16.2.3 — Wire Country Filter Into `LocationController::Search`
-- [ ] Update `LocationController::Search(const std::string& query)` in `src/controller/location_controller.cpp`:
-  - [ ] Read `search_state_.country_filter` (under the mutex) before dispatching the background thread.
-  - [ ] Snapshot it into a local `const std::string country` variable alongside `query` and `search_id`.
-  - [ ] Pass `country` as the second argument to `GeocodingService::Search(query, country)`.
-- [ ] **No change to the public `Search(query)` signature** — the controller reads `country_filter` from its own state, keeping the caller API stable.
-- [ ] **Files changed:** `src/controller/location_controller.cpp`.
+#### Step 16.2.3 — Wire Country Filter Into `LocationController::Search` ✅ Done
+- [x] Update `LocationController::Search(const std::string& query)` in `src/controller/location_controller.cpp`:
+  - [x] Read `search_state_.country_filter` (under the mutex) before dispatching the background thread.
+  - [x] Snapshot it into a local `const std::string country` variable alongside `query` and `search_id`.
+  - [x] Pass `country` as the second argument to `GeocodingService::Search(query, country)`.
+- [x] **No change to the public `Search(query)` signature** — the controller reads `country_filter` from its own state, keeping the caller API stable.
+- [x] **Files changed:** `src/controller/location_controller.cpp`.
 
-#### Step 16.2.4 — Sync Dropdown Selection to `country_filter` in `LocationController`
-- [ ] Add a new public method to `LocationController`:
+#### Step 16.2.4 — Sync Dropdown Selection to `country_filter` in `LocationController` ✅ Done
+- [x] Add a new public method to `LocationController`:
   ```cpp
   void SetCountryFilter(int index);
   ```
-  - [ ] Validates `index` is within `kCountryList` bounds.
-  - [ ] Under the mutex: sets `search_state_.country_filter_index = index` and `search_state_.country_filter = std::string(kCountryList[index].code)`.
-  - [ ] If `search_state_.search_query` is non-empty, re-triggers `Search(search_state_.search_query)` so results immediately re-filter.
-- [ ] Declare `SetCountryFilter` in `src/controller/location_controller.hpp`.
-- [ ] **Files changed:** `src/controller/location_controller.hpp`, `src/controller/location_controller.cpp`.
+  - [x] Validates `index` is within `kCountryList` bounds.
+  - [x] Under the mutex: sets `search_state_.country_filter_index = index` and `search_state_.country_filter = std::string(kCountryList[index].code)`.
+  - [x] If `search_state_.search_query` is non-empty, re-triggers `Search(search_state_.search_query)` so results immediately re-filter.
+- [x] Declare `SetCountryFilter` in `src/controller/location_controller.hpp`.
+- [x] **Files changed:** `src/controller/location_controller.hpp`, `src/controller/location_controller.cpp`.
 
-#### Step 16.2.5 — Add Country Dropdown to `LocationSearchView`
-- [ ] In `LocationSearchView` (`src/view/location_search_view.cpp` / `.hpp`):
-  - [ ] Add a `std::vector<std::string> country_entries_` member — populated once in the constructor from `kCountryList` display labels.
-  - [ ] Add a `ftxui::Component country_dropdown_` member — created with `ftxui::Dropdown(&country_entries_, &search_state.country_filter_index)`.
-  - [ ] Register an `on_change` callback on the dropdown that calls `controller_.SetCountryFilter(search_state.country_filter_index)`.
-  - [ ] Insert `country_dropdown_` into the `Container::Vertical` between the search input and the save checkbox (tab order: input → country dropdown → save checkbox → suggestions menu).
-  - [ ] In the renderer lambda, add a labelled row above the dropdown:
+#### Step 16.2.5 — Add Country Dropdown to `LocationSearchView` ✅ Done
+- [x] In `LocationSearchView` (`src/view/location_search_view.cpp` / `.hpp`):
+  - [x] Add a `std::vector<std::string> country_entries_` member — populated once in the constructor from `kCountryList` display labels.
+  - [x] Add a `ftxui::Component country_dropdown_` member — created with `ftxui::Dropdown(&country_entries_, &search_state.country_filter_index)`.
+  - [x] Register an `on_change` callback on the dropdown that calls `controller_.SetCountryFilter(search_state.country_filter_index)`.
+  - [x] Insert `country_dropdown_` into the `Container::Vertical` between the search input and the save checkbox (tab order: input → country dropdown → save checkbox → suggestions menu).
+  - [x] In the renderer lambda, add a labelled row above the dropdown:
     ```
     text("Country Filter:") | bold
     country_dropdown_->Render() | border
     ```
-  - [ ] Update the focus navigation `CatchEvent` handler to route Tab/ArrowDown/ArrowUp through the new dropdown correctly (input → dropdown → checkbox → suggestions).
-- [ ] **Files changed:** `src/view/location_search_view.hpp`, `src/view/location_search_view.cpp`.
+  - [x] Update the focus navigation `CatchEvent` handler to route Tab/ArrowDown/ArrowUp through the new dropdown correctly (input → dropdown → checkbox → suggestions).
+- [x] **Files changed:** `src/view/location_search_view.hpp`, `src/view/location_search_view.cpp`.
 
-#### Step 16.2.6 — Reset Country Filter on `CancelSearch` / `OpenSearch`
-- [ ] In `LocationController::OpenSearch()`: reset `search_state_.country_filter_index = 0` and `search_state_.country_filter = "AU"` so the modal always opens defaulting to Australia.
-- [ ] In `LocationController::CancelSearch()`: reset the same two fields for consistency.
-- [ ] **Files changed:** `src/controller/location_controller.cpp`.
+#### Step 16.2.6 — Reset Country Filter on `CancelSearch` / `OpenSearch` ✅ Done
+- [x] In `LocationController::OpenSearch()`: reset `search_state_.country_filter_index = 0` and `search_state_.country_filter = "AU"` so the modal always opens defaulting to Australia.
+- [x] In `LocationController::CancelSearch()`: reset the same two fields for consistency.
+- [x] **Files changed:** `src/controller/location_controller.cpp`.
 
-#### Step 16.2.7 — Tests
-- [ ] **`tests/controller/test_location_controller.cpp`** — add sections:
-  - [ ] `SetCountryFilter(0)` sets `country_filter == "AU"` and `country_filter_index == 0`.
-  - [ ] `SetCountryFilter` to a "US" index sets `country_filter == "US"`.
-  - [ ] `SetCountryFilter` to the "Any Country" index sets `country_filter == ""`.
-  - [ ] `SetCountryFilter` with an out-of-bounds index is a no-op.
-  - [ ] `OpenSearch()` resets filter to `"AU"` / index `0`.
-  - [ ] `CancelSearch()` resets filter to `"AU"` / index `0`.
-- [ ] **`tests/util/test_constants.cpp`** (new or extend existing) — verify `kCountryList[0].code == "AU"` and that the list contains an "Any Country" entry with empty code.
-- [ ] Build and run — all tests green.
-- [ ] **Files changed:** `tests/controller/test_location_controller.cpp`, `tests/util/test_constants.cpp`.
+#### Step 16.2.7 — Tests ✅ Done
+- [x] **`tests/controller/test_location_controller.cpp`** — add sections:
+  - [x] `SetCountryFilter(0)` sets `country_filter == "AU"` and `country_filter_index == 0`.
+  - [x] `SetCountryFilter` to a "US" index sets `country_filter == "US"`.
+  - [x] `SetCountryFilter` to the "Any Country" index sets `country_filter == ""`.
+  - [x] `SetCountryFilter` with an out-of-bounds index is a no-op.
+  - [x] `OpenSearch()` resets filter to `"AU"` / index `0`.
+  - [x] `CancelSearch()` resets filter to `"AU"` / index `0`.
+- [x] **`tests/util/test_constants.cpp`** (new or extend existing) — verify `kCountryList[0].code == "AU"` and that the list contains an "Any Country" entry with empty code.
+- [x] Build and run — all tests green.
+- [x] **Files changed:** `tests/controller/test_location_controller.cpp`, `tests/util/test_constants.cpp`.
+
+#### Step 16.2.8 — Fix ArrowDown Skipping Dropdown List ✅ Done
+
+**Root cause:** Lines 109–134 of `location_search_view.cpp` handle `Tab || ArrowDown` in a single branch. When `country_dropdown_->Focused()` is true, the handler **always** calls `save_checkbox_->TakeFocus()` and returns `true` — consuming the event before the dropdown ever sees it. This means `ArrowDown` can never reach the dropdown's internal list navigation, whether the dropdown is open or closed.
+
+The symmetric bug exists on the `ArrowUp` path (lines 136–157): when `country_dropdown_->Focused()`, `ArrowUp` always jumps back to `search_input_` instead of letting the dropdown close its list or navigate within it.
+
+**Fix:** Split the compound `Tab || ArrowDown` / `TabReverse || ArrowUp` conditions so that arrow keys are passed through to the dropdown natively, and only `Tab` / `TabReverse` perform inter-component focus jumps.
+
+Concretely, when `country_dropdown_->Focused()`:
+- `Tab` → `save_checkbox_->TakeFocus(); return true`
+- `ArrowDown` → `return false` (dropdown owns this: opens list if closed, moves cursor if open)
+- `TabReverse` → `search_input_->TakeFocus(); return true`
+- `ArrowUp` → `return false` (dropdown owns this: closes list or navigates up within it)
+
+The same `return false` pattern is already applied correctly for `suggestions_menu_` on line 130 — this step brings the dropdown in line with that existing pattern.
+
+- [x] Edit the `CatchEvent` lambda in `src/view/location_search_view.cpp`:
+  - [x] In the forward branch (`Tab || ArrowDown`), when `country_dropdown_->Focused()`: only call `save_checkbox_->TakeFocus()` when the event is `Tab`; when `ArrowDown`, `return false`.
+  - [x] In the reverse branch (`TabReverse || ArrowUp`), when `country_dropdown_->Focused()`: only call `search_input_->TakeFocus()` when the event is `TabReverse`; when `ArrowUp`, `return false`.
+- [x] Build and run — all tests green.
+- [x] **Files changed:** `src/view/location_search_view.cpp`.
 
 ---
 
-### Phase 16.3 — Hourly Forecast Fetch & Slider Data
+### Phase 16.3 — Explicit Search Button (Remove Auto-Search While Typing)
+
+Replace the flaky auto-search-on-keypress behaviour with an explicit trigger: a
+**Search button** below the city input, plus pressing **Enter** in the input field.
+The country dropdown's `SetCountryFilter` still re-fires search live (when a query
+is already present) because that is intentional reactive filtering, not keystroke noise.
+
+---
+
+#### Step 16.3.1 — Remove `on_change` Auto-Search from the Input
+
+The only change is removing the `on_change` callback on `search_input_option` in
+`LocationSearchView`. The input still binds to `search_state_.search_query` so
+typing updates the string — it just no longer dispatches a search on every character.
+
+- [x] In `src/view/location_search_view.cpp`, delete (or comment out) lines 28–30:
+  ```cpp
+  // REMOVE:
+  search_input_option.on_change = [this] {
+      controller_.Search(controller_.GetSearchState().search_query);
+  };
+  ```
+- [x] Build and run — typing in the search box no longer fires network requests.
+  Existing test suite must still pass (303 assertions).
+- [x] **Files changed:** `src/view/location_search_view.cpp`.
+
+---
+
+#### Step 16.3.2 — Add `TriggerSearch()` to `LocationController`
+
+A single explicit entry point that the button, Enter key, and any future caller
+can use without knowing the internal state layout.
+
+- [x] Declare `void TriggerSearch()` in `src/controller/location_controller.hpp`.
+- [x] Implement in `src/controller/location_controller.cpp`:
+  - [x] Lock the mutex and snapshot `search_state_.search_query`.
+  - [x] If the query is non-empty: call `Search(query)`.
+  - [x] If the query is empty: call `Search("")` (which already clears state and triggers a redraw synchronously).
+- [x] **Files changed:** `src/controller/location_controller.hpp`, `src/controller/location_controller.cpp`.
+
+#### Step 16.3.3 — Add Search Button Component to `LocationSearchView`
+
+- [x] Add `ftxui::Component search_button_` private member to `src/view/location_search_view.hpp`.
+- [x] In the constructor (`location_search_view.cpp`):
+  - [x] Create the button:
+    ```cpp
+    search_button_ = Button("  Search  ", [this] {
+        controller_.TriggerSearch();
+    });
+    ```
+  - [x] Insert `search_button_` into `Container::Vertical` immediately after
+    `search_input_` (new tab order: **input → button → dropdown → checkbox → suggestions**).
+- [x] In the renderer lambda, add the button between the search input and the
+  country filter separator:
+  ```
+  search_input_->Render() | border
+  search_button_->Render() | center
+  separator()
+  text("Country Filter:") | bold
+  ...
+  ```
+- [x] Build and run — button is visible in the modal and clickable.
+- [x] **Files changed:** `src/view/location_search_view.hpp`, `src/view/location_search_view.cpp`.
+
+#### Step 16.3.4 — Wire Enter Key and Update Focus Navigation ✅ Done
+
+Two behaviour changes in the `CatchEvent` lambda:
+
+1. **Enter in search input** now calls `controller_.TriggerSearch()` instead of
+   jumping focus to suggestions. Results will appear async; focus stays on the
+   input so the user can refine the query.
+
+2. **Tab/Arrow navigation** updated for the new button slot
+   (input → button → dropdown → checkbox → suggestions → wrap).
+
+Specific `CatchEvent` edits in `src/view/location_search_view.cpp`:
+
+- [x] Replace the existing `Event::Return` / `search_input_->Focused()` block:
+  ```cpp
+  // BEFORE:
+  if (event == Event::Return) {
+      if (search_input_->Focused()) {
+          if (suggestions_available) { suggestions_menu_->TakeFocus(); }
+          return true;
+      }
+  }
+
+  // AFTER:
+  if (event == Event::Return) {
+      if (search_input_->Focused() || search_button_->Focused()) {
+          controller_.TriggerSearch();
+          return true;
+      }
+  }
+  ```
+- [x] In the forward `Tab || ArrowDown` branch, insert between `search_input_` and
+  `country_dropdown_`:
+  ```cpp
+  if (search_input_->Focused()) {
+      search_button_->TakeFocus();
+  } else if (search_button_->Focused()) {
+      country_dropdown_->TakeFocus();
+  } else if (country_dropdown_->Focused()) { ...
+  ```
+- [x] In the reverse `TabReverse || ArrowUp` branch, insert between
+  `country_dropdown_` and `search_input_`:
+  ```cpp
+  } else if (country_dropdown_->Focused()) {
+      if (event == Event::TabReverse) { search_button_->TakeFocus(); return true; }
+      else { return false; }
+  } else if (search_button_->Focused()) {
+      search_input_->TakeFocus();
+  } else if (search_input_->Focused()) { ...
+  ```
+- [x] Build and run — Enter in input triggers search; Tab cycles correctly through
+  all 5 focus stops.
+- [x] **Files changed:** `src/view/location_search_view.cpp`.
+
+---
+
+#### Step 16.3.5 — Clear Old Search Results & Show Searching State
+
+- [x] In `src/controller/location_controller.cpp`:
+  - [x] In `Search(const std::string& query)` when query is non-empty, clear `search_suggestions` and reset `selected_suggestion_index = 0` under the lock.
+  - [x] Trigger an immediate redraw `trigger_redraw_()` after the lock releases so the view displays "Searching..." immediately.
+- [x] Build and run — pressing search clears old results and displays the loading status.
+- [x] **Files changed:** `src/controller/location_controller.cpp`.
+
+---
+
+#### Step 16.3.6 — Fix Country Selector Event Sync Order
+
+- [x] In `src/view/location_search_view.cpp`:
+  - [x] Implement a `PostEvent` helper component that delegates `OnEvent` to the child component first, and then executes a callback if the event was handled (`handled == true`).
+  - [x] Wrap `country_dropdown_` with `PostEvent` and call `controller_.SetCountryFilter()` inside the callback when the event is `Event::Return` or mouse-based, ensuring the dropdown has updated the state index before the search is triggered.
+- [x] Build and run — changing the country now correctly searches with the newly selected country filter.
+- [x] **Files changed:** `src/view/location_search_view.cpp`.
+
+---
+
+#### Step 16.3.7 — Tests
+
+- [x] **`tests/controller/test_location_controller.cpp`** — add sections:
+  - [x] `TriggerSearch()` with a non-empty `search_query` sets `is_loading = true` (i.e. dispatches a background search).
+  - [x] `TriggerSearch()` with an empty `search_query` is a no-op / clears state (same as `Search("")`).
+- [x] Build and run — all tests green (311 assertions).
+- [x] **Files changed:** `tests/controller/test_location_controller.cpp`.
+
+---
+
+### Phase 16.4 — Hourly Forecast Fetch & Slider Data
 - [ ] Add `HourlyData` struct to `src/model/weather_data.hpp` with per-hour vectors for temperature, rain probability, and wind speed.
 - [ ] Extend `WeatherService` with `FetchHourlyForecast(double lat, double lon)` returning `std::optional<HourlyData>` for a 7-day / 168-hour window.
 - [ ] Add `std::optional<HourlyData> hourly_data` to `AppState`.
@@ -619,14 +791,14 @@ Wire a country filter dropdown/selector into the existing location search modal 
 - [ ] Add Catch2 tests for hourly JSON parsing and controller wiring.
 
 
-### Phase 16.4 — SQLite Forecast Cache
+### Phase 16.5 — SQLite Forecast Cache
 - [ ] Add a `ForecastCache` class (or extend `WeatherService`) with TTL-based read/write using the existing SQLite3 connection.
 - [ ] Cache key: `latitude + longitude + date string`.
 - [ ] Before each network fetch, query the cache; skip the HTTP call if a valid record exists within `kCacheTtlSeconds`.
 - [ ] Add `tests/service/test_forecast_cache.cpp` verifying cache hit / miss / TTL expiry logic using an in-memory SQLite database.
 
 
-### Phase 16.5 — Full Integration, Tests & Clang-Format Verification
+### Phase 16.6 — Full Integration, Tests & Clang-Format Verification
 - [ ] Full build pipeline: all targets compile cleanly.
 - [ ] All Catch2 test suites pass (`./build/run_tests`).
 - [ ] `clang-format --dry-run --Werror src/**/*.cpp src/**/*.hpp tests/**/*.cpp` passes with zero violations.
@@ -642,4 +814,5 @@ Wire a country filter dropdown/selector into the existing location search modal 
 - [ ] Fully configure final target linkages in `CMakeLists.txt`.
 - [ ] Run the complete build pipeline and verify all unit/integration tests pass.
 - [ ] Code formatting check using Clang-Format verification.
+
 

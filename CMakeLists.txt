@@ -125,6 +125,7 @@ add_executable(run_tests
     tests/controller/test_db_controller.cpp
     tests/controller/test_forecast_controller.cpp
     tests/util/test_formatting.cpp
+    tests/util/test_constants.cpp
     tests/view/test_app.cpp
     tests/view/test_weather_icon.cpp
 )

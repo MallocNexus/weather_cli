@@ -1,9 +1,34 @@
 #include "view/location_search_view.hpp"
+#include "util/constants.hpp"
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <mutex>
 
 using namespace ftxui;
+
+namespace {
+
+Component PostEvent(Component child, std::function<void(Event)> post_event) {
+    class Impl : public ComponentBase {
+    public:
+        Impl(Component child, std::function<void(Event)> post_event)
+            : post_event_(std::move(post_event)) {
+            Add(std::move(child));
+        }
+        bool OnEvent(Event event) override {
+            bool handled = ComponentBase::OnEvent(event);
+            if (handled) {
+                post_event_(event);
+            }
+            return handled;
+        }
+    private:
+        std::function<void(Event)> post_event_;
+    };
+    return Make<Impl>(std::move(child), std::move(post_event));
+}
+
+} // namespace
 
 namespace weather_cli {
 
@@ -12,20 +37,19 @@ LocationSearchView::LocationSearchView(LocationController& controller)
 
     auto& search_state = controller_.GetSearchState();
 
-    // 1. Search input — styled via transform (bg applied here, not on the
-    //    rendered element, so FTXUI's internal focusCursorBarBlinking can
-    //    still place the terminal cursor correctly).
+    // 0. Populate country label list from kCountryList (done once at construction).
+    for (const auto& entry : kCountryList) {
+        country_entries_.push_back(std::string(entry.label));
+    }
+
+    // 1. Search input
     InputOption search_input_option = InputOption::Default();
     search_input_option.content = &search_state.search_query;
     search_input_option.placeholder = "Enter city name to search";
     search_input_option.cursor_position = &search_state.cursor_position;
     search_input_option.multiline = false;
-    search_input_option.insert = false;  // Block cursor (inverts colors) — always visible.
-                                         // insert=true uses the terminal's native bar cursor
-                                         // which is invisible on a black background.
-    search_input_option.on_change = [this] {
-        controller_.Search(controller_.GetSearchState().search_query);
-    };
+    search_input_option.insert = false;
+
     search_input_option.transform = [](InputState s) {
         if (s.is_placeholder) {
             s.element |= dim;
@@ -35,20 +59,37 @@ LocationSearchView::LocationSearchView(LocationController& controller)
     };
     search_input_ = Input(search_input_option);
 
-    // 2. Suggestions menu
+    // Button to trigger search explicitly
+    search_button_ = Button("  Search  ", [this] {
+        controller_.TriggerSearch();
+    });
+
+    // 2. Country dropdown — bound to search_state.country_filter_index.
+    // Wrap with PostEvent so we trigger the filter update AFTER the dropdown has natively
+    // processed selection events and updated the bound index state.
+    country_dropdown_ = Dropdown(&country_entries_, &search_state.country_filter_index);
+    country_dropdown_ = PostEvent(country_dropdown_, [this](Event event) {
+        if (event == Event::Return || event.is_mouse()) {
+            controller_.SetCountryFilter(
+                controller_.GetSearchState().country_filter_index);
+        }
+    });
+
+    // 3. Save checkbox
+    save_checkbox_ = Checkbox("Save location to database", &search_state.save_to_db);
+
+    // 4. Suggestions menu
     MenuOption suggestions_option = MenuOption::Vertical();
     suggestions_option.on_enter = [this] {
         controller_.SelectSuggestion(controller_.GetSearchState().selected_suggestion_index);
     };
     suggestions_menu_ = Menu(&suggestion_entries_, &search_state.selected_suggestion_index, suggestions_option);
 
-    // 3. Save checkbox
-    save_checkbox_ = Checkbox("Save location to database", &search_state.save_to_db);
-
-    // Build container — Container::Vertical correctly overrides SetActiveChild
-    // so TakeFocus() propagation works through it.
+    // Build container — tab order: input → button → country dropdown → save checkbox → suggestions
     auto search_container = Container::Vertical({
         search_input_,
+        search_button_,
+        country_dropdown_,
         save_checkbox_,
         suggestions_menu_
     });
@@ -76,22 +117,24 @@ LocationSearchView::LocationSearchView(LocationController& controller)
         }
 
         if (event == Event::Return) {
-            if (search_input_->Focused()) {
-                bool suggestions_available = false;
-                {
-                    std::lock_guard<std::mutex> lock(state.mutex);
-                    suggestions_available = !state.search_suggestions.empty();
-                }
-                if (suggestions_available) {
-                    suggestions_menu_->TakeFocus();
-                }
+            if (search_input_->Focused() || search_button_->Focused()) {
+                controller_.TriggerSearch();
                 return true;
             }
         }
 
         if (event == Event::Tab || event == Event::ArrowDown) {
             if (search_input_->Focused()) {
-                save_checkbox_->TakeFocus();
+                search_button_->TakeFocus();
+            } else if (search_button_->Focused()) {
+                country_dropdown_->TakeFocus();
+            } else if (country_dropdown_->Focused()) {
+                if (event == Event::Tab) {
+                    save_checkbox_->TakeFocus();
+                    return true;
+                } else {
+                    return false;  // ArrowDown → let the dropdown navigate its list natively
+                }
             } else if (save_checkbox_->Focused()) {
                 bool suggestions_available = false;
                 {
@@ -117,8 +160,17 @@ LocationSearchView::LocationSearchView(LocationController& controller)
         if (event == Event::TabReverse || event == Event::ArrowUp) {
             if (search_input_->Focused()) {
                 // ArrowUp from input: stay on input
-            } else if (save_checkbox_->Focused()) {
+            } else if (search_button_->Focused()) {
                 search_input_->TakeFocus();
+            } else if (country_dropdown_->Focused()) {
+                if (event == Event::TabReverse) {
+                    search_button_->TakeFocus();
+                    return true;
+                } else {
+                    return false;  // ArrowUp → let the dropdown navigate its list natively
+                }
+            } else if (save_checkbox_->Focused()) {
+                country_dropdown_->TakeFocus();
             } else if (suggestions_menu_->Focused()) {
                 if (event == Event::TabReverse) {
                     search_input_->TakeFocus();
@@ -189,6 +241,10 @@ LocationSearchView::LocationSearchView(LocationController& controller)
             separator(),
             text("Enter city name and press Enter to query:") | dim,
             search_input_->Render() | border,
+            search_button_->Render() | center,
+            separator(),
+            text("Country Filter:") | bold,
+            country_dropdown_->Render() | border,
             separator(),
             save_checkbox_->Render() | border,
             separator(),

@@ -22,7 +22,10 @@ public:
 private:
     LocationController& controller_;
     std::vector<std::string> suggestion_entries_;
+    std::vector<std::string> country_entries_;   // display labels for kCountryList
     ftxui::Component search_input_;
+    ftxui::Component search_button_;
+    ftxui::Component country_dropdown_;          // bound to search_state.country_filter_index
     ftxui::Component suggestions_menu_;
     ftxui::Component save_checkbox_;
     ftxui::Component view_component_;

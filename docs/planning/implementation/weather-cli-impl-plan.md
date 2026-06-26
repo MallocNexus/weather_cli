@@ -765,8 +765,8 @@ Specific `CatchEvent` edits in `src/view/location_search_view.cpp`:
 #### Step 16.3.6 — Fix Country Selector Event Sync Order
 
 - [x] In `src/view/location_search_view.cpp`:
-  - [x] Implement a `PostEvent` helper component that delegates `OnEvent` to the child component first, and then executes a callback if the event was handled (`handled == true`).
-  - [x] Wrap `country_dropdown_` with `PostEvent` and call `controller_.SetCountryFilter()` inside the callback when the event is `Event::Return` or mouse-based, ensuring the dropdown has updated the state index before the search is triggered.
+  - [x] Implement a `AfterEvent` helper component class and `OnAfterEvent` factory function that delegates `OnEvent` to the child component first, and then executes a callback if the event was handled (`handled == true`).
+  - [x] Wrap `country_dropdown_` with `OnAfterEvent` and call `controller_.SetCountryFilter()` inside the callback when the event is `Event::Return` or mouse-based, ensuring the dropdown has updated the state index before the search is triggered.
 - [x] Build and run — changing the country now correctly searches with the newly selected country filter.
 - [x] **Files changed:** `src/view/location_search_view.cpp`.
 

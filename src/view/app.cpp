@@ -14,7 +14,7 @@ namespace weather_cli {
 
 App::App(AppState& state, AppController& controller)
     : state_(state), controller_(controller),
-      location_search_view_(controller.GetLocationController()),
+      location_search_view_(controller.GetLocationSearchController()),
       about_view_(controller.GetAboutController()) {
 
     // 1. Top animated navigation tab bar

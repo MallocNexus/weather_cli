@@ -15,6 +15,7 @@
 #include "model/location_repository.hpp"
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/location_search_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
 #include "controller/forecast_controller.hpp"
@@ -88,6 +89,10 @@ int main(int argc, char* argv[]) {
             screen.PostEvent(ftxui::Event::Custom);
         });
 
+        LocationSearchController loc_search_controller(loc_controller, [&screen] {
+            screen.PostEvent(ftxui::Event::Custom);
+        });
+
         AboutState about_state;
         AboutController about_controller(about_state, [&screen] {
             screen.PostEvent(ftxui::Event::Custom);
@@ -97,7 +102,7 @@ int main(int argc, char* argv[]) {
             screen.PostEvent(ftxui::Event::Custom);
         });
 
-        AppController controller(state, loc_controller, about_controller, db_controller, forecast_controller, screen.ExitLoopClosure());
+        AppController controller(state, loc_controller, loc_search_controller, about_controller, db_controller, forecast_controller, screen.ExitLoopClosure());
 
         App app(state, controller);
 

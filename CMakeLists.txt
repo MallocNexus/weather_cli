@@ -79,6 +79,7 @@ target_link_libraries(weather_lib PUBLIC
 add_library(controller_lib STATIC 
     src/controller/app_controller.cpp
     src/controller/location_controller.cpp
+    src/controller/location_search_controller.cpp
     src/controller/about_controller.cpp
     src/controller/db_controller.cpp
     src/controller/forecast_controller.cpp
@@ -94,6 +95,7 @@ add_library(app_lib STATIC
     src/view/location_search_view.cpp
     src/view/about_view.cpp
     src/view/weather_icon.cpp
+    src/view/component/after_event.cpp
 )
 target_include_directories(app_lib PUBLIC src/)
 target_link_libraries(app_lib PUBLIC
@@ -120,6 +122,7 @@ add_executable(run_tests
     tests/service/test_zippopotam_service.cpp
     tests/service/test_weather_service.cpp
     tests/controller/test_location_controller.cpp
+    tests/controller/test_location_search_controller.cpp
     tests/controller/test_app_controller.cpp
     tests/controller/test_about_controller.cpp
     tests/controller/test_db_controller.cpp

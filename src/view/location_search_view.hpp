@@ -5,13 +5,13 @@
 #include <string>
 #include <vector>
 
-#include "controller/location_controller.hpp"
+#include "controller/location_search_controller.hpp"
 
 namespace weather_cli {
 
 class LocationSearchView {
 public:
-    LocationSearchView(LocationController& controller);
+    LocationSearchView(LocationSearchController& controller);
     
     // Returns the main interactive TUI component representing the modal contents
     ftxui::Component GetComponent();
@@ -20,7 +20,7 @@ public:
     ftxui::Element Render(ftxui::Element base_document);
 
 private:
-    LocationController& controller_;
+    LocationSearchController& controller_;
     std::vector<std::string> suggestion_entries_;
     std::vector<std::string> country_entries_;   // display labels for kCountryList
     ftxui::Component search_input_;

@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/location_search_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/forecast_controller.hpp"
 #include "model/app_state.hpp"
@@ -20,10 +21,11 @@ TEST_CASE("AppController Actions", "[controller][app]") {
     repo.Initialize();
     DatabaseController db_controller(repo, []() {});
     LocationController location_controller(state, db_controller, []() {});
+    LocationSearchController location_search_controller(location_controller, []() {});
     AboutState about_state;
     AboutController about_controller(about_state, []() {});
     ForecastController forecast_controller(state, []() {});
-    AppController controller(state, location_controller, about_controller, db_controller, forecast_controller, on_quit);
+    AppController controller(state, location_controller, location_search_controller, about_controller, db_controller, forecast_controller, on_quit);
 
     SECTION("Initial AppState configuration matches defaults") {
         REQUIRE(state.is_celsius);
@@ -55,8 +57,6 @@ TEST_CASE("AppController Actions", "[controller][app]") {
     }
 
     SECTION("RefreshForecast delegates to ForecastController (issues background fetch)") {
-        // RefreshForecast sets is_loading = true synchronously before the
-        // background thread fires, so we can observe that transition.
         REQUIRE_FALSE(state.is_loading);
         controller.RefreshForecast();
         REQUIRE(state.is_loading);
@@ -72,16 +72,16 @@ TEST_CASE("AppController Actions", "[controller][app]") {
         REQUIRE(quit_called);
     }
 
-    SECTION("OpenSearch delegates modal state update to LocationController") {
-        auto& search_state = location_controller.GetSearchState();
+    SECTION("OpenSearch delegates modal state update to LocationSearchController") {
+        auto& search_state = location_search_controller.GetSearchState();
         REQUIRE_FALSE(search_state.show_search_modal);
 
         controller.OpenSearch();
         REQUIRE(search_state.show_search_modal);
     }
 
-    SECTION("IsSearchModalOpen returns thread-safe state from LocationController") {
-        auto& search_state = location_controller.GetSearchState();
+    SECTION("IsSearchModalOpen returns thread-safe state from LocationSearchController") {
+        auto& search_state = location_search_controller.GetSearchState();
 
         {
             std::lock_guard<std::mutex> lock(search_state.mutex);
@@ -115,6 +115,13 @@ TEST_CASE("AppController Actions", "[controller][app]") {
 
         const auto& const_controller = controller;
         REQUIRE(&const_controller.GetLocationController() == &location_controller);
+    }
+
+    SECTION("GetLocationSearchController returns internal controller reference") {
+        REQUIRE(&controller.GetLocationSearchController() == &location_search_controller);
+
+        const auto& const_controller = controller;
+        REQUIRE(&const_controller.GetLocationSearchController() == &location_search_controller);
     }
 
     SECTION("OpenAbout delegates modal state update to AboutController") {

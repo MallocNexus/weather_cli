@@ -48,7 +48,7 @@ All 7 steps complete (16.3.1–16.3.7).
 | 16.3.3 | Added `search_button_` to `LocationSearchView` (input → button → dropdown order). |
 | 16.3.4 | Wired Enter in input to trigger search, and updated 5-stop focus traversal. |
 | 16.3.5 | Cleared previous search suggestions and triggered immediate TUI redraw on new search trigger. |
-| 16.3.6 | Fixed country dropdown sync order by wrapping it in a `PostEvent` decorator. |
+| 16.3.6 | Fixed country dropdown sync order by wrapping it in a `OnAfterEvent` decorator. |
 | 16.3.7 | Unit tests verifying `TriggerSearch()` with empty and non-empty queries. |
 
 ### Icon Fix
@@ -188,5 +188,5 @@ Build system: CMake + Ninja, C++20, Catch2 v3.5.2, FTXUI, nlohmann/json, cpr.
 | Arrow keys `return false` for focused compound components | Consistent pattern: `Tab`/`TabReverse` = inter-component jump; `ArrowDown`/`ArrowUp` = intra-component navigation |
 | `TriggerSearch()` wraps `Search()` | Keeps view decoupled from state layout; single named intent for "user explicitly asked to search" |
 | Enter key triggers search, stays on input | User can immediately refine query if results are wrong, without re-tabbing back |
-| `PostEvent` Wrapper for dropdown | Ensures index state updates inside the child dropdown *before* `SetCountryFilter` triggers background searches |
+| `OnAfterEvent` Wrapper for dropdown | Ensures index state updates inside the child dropdown *before* `SetCountryFilter` triggers background searches |
 | Clear old suggestions on new search trigger | Keeps the suggestions list clean and guarantees the "Searching..." loader displays while the background thread fetches results |

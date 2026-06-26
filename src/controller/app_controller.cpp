@@ -1,5 +1,6 @@
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/location_search_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
 #include "controller/forecast_controller.hpp"
@@ -7,8 +8,8 @@
 
 namespace weather_cli {
 
-AppController::AppController(AppState& state, LocationController& location_controller, AboutController& about_controller, DatabaseController& db_controller, ForecastController& forecast_controller, std::function<void()> on_quit)
-    : state_(state), location_controller_(location_controller), about_controller_(about_controller), db_controller_(db_controller), forecast_controller_(forecast_controller), on_quit_(on_quit) {}
+AppController::AppController(AppState& state, LocationController& location_controller, LocationSearchController& location_search_controller, AboutController& about_controller, DatabaseController& db_controller, ForecastController& forecast_controller, std::function<void()> on_quit)
+    : state_(state), location_controller_(location_controller), location_search_controller_(location_search_controller), about_controller_(about_controller), db_controller_(db_controller), forecast_controller_(forecast_controller), on_quit_(on_quit) {}
 
 void AppController::ToggleUnits() {
     state_.is_celsius = !state_.is_celsius;
@@ -37,12 +38,12 @@ void AppController::Quit() {
 }
 
 void AppController::OpenSearch() {
-    location_controller_.OpenSearch();
+    location_search_controller_.OpenSearch();
 }
 
 bool AppController::IsSearchModalOpen() const {
-    std::lock_guard<std::mutex> lock(location_controller_.GetSearchState().mutex);
-    return location_controller_.GetSearchState().show_search_modal;
+    std::lock_guard<std::mutex> lock(location_search_controller_.GetSearchState().mutex);
+    return location_search_controller_.GetSearchState().show_search_modal;
 }
 
 void AppController::SelectPresetLocation(int index) {
@@ -63,6 +64,14 @@ LocationController& AppController::GetLocationController() {
 
 const LocationController& AppController::GetLocationController() const {
     return location_controller_;
+}
+
+LocationSearchController& AppController::GetLocationSearchController() {
+    return location_search_controller_;
+}
+
+const LocationSearchController& AppController::GetLocationSearchController() const {
+    return location_search_controller_;
 }
 
 void AppController::OpenAbout() {

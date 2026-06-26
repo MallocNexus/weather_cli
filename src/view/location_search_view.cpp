@@ -4,35 +4,13 @@
 #include <ftxui/dom/elements.hpp>
 #include <mutex>
 
+#include "view/component/after_event.hpp"
+
 using namespace ftxui;
-
-namespace {
-
-Component PostEvent(Component child, std::function<void(Event)> post_event) {
-    class Impl : public ComponentBase {
-    public:
-        Impl(Component child, std::function<void(Event)> post_event)
-            : post_event_(std::move(post_event)) {
-            Add(std::move(child));
-        }
-        bool OnEvent(Event event) override {
-            bool handled = ComponentBase::OnEvent(event);
-            if (handled) {
-                post_event_(event);
-            }
-            return handled;
-        }
-    private:
-        std::function<void(Event)> post_event_;
-    };
-    return Make<Impl>(std::move(child), std::move(post_event));
-}
-
-} // namespace
 
 namespace weather_cli {
 
-LocationSearchView::LocationSearchView(LocationController& controller)
+LocationSearchView::LocationSearchView(LocationSearchController& controller)
     : controller_(controller) {
 
     auto& search_state = controller_.GetSearchState();
@@ -65,10 +43,10 @@ LocationSearchView::LocationSearchView(LocationController& controller)
     });
 
     // 2. Country dropdown — bound to search_state.country_filter_index.
-    // Wrap with PostEvent so we trigger the filter update AFTER the dropdown has natively
+    // Wrap with OnAfterEvent so we trigger the filter update AFTER the dropdown has natively
     // processed selection events and updated the bound index state.
     country_dropdown_ = Dropdown(&country_entries_, &search_state.country_filter_index);
-    country_dropdown_ = PostEvent(country_dropdown_, [this](Event event) {
+    country_dropdown_ = OnAfterEvent(country_dropdown_, [this](Event event) {
         if (event == Event::Return || event.is_mouse()) {
             controller_.SetCountryFilter(
                 controller_.GetSearchState().country_filter_index);

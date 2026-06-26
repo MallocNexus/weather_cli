@@ -2,6 +2,7 @@
 #include "view/app.hpp"
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
+#include "controller/location_search_controller.hpp"
 #include "controller/about_controller.hpp"
 #include "controller/db_controller.hpp"
 #include "controller/forecast_controller.hpp"
@@ -17,10 +18,11 @@ TEST_CASE("App View Layout Component Verification", "[view][app]") {
     repo.Initialize();
     DatabaseController db_controller(repo, []() {});
     LocationController loc_controller(state, db_controller, []() {});
+    LocationSearchController loc_search_controller(loc_controller, []() {});
     AboutState about_state;
     AboutController about_controller(about_state, []() {});
     ForecastController forecast_controller(state, []() {});
-    AppController controller(state, loc_controller, about_controller, db_controller, forecast_controller, []() {});
+    AppController controller(state, loc_controller, loc_search_controller, about_controller, db_controller, forecast_controller, []() {});
 
     SECTION("App view constructor and component retrieval succeed") {
         App app(state, controller);

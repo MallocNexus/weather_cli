@@ -12,7 +12,7 @@ Below is a detailed diagram showing the data flow, focus handling, thread safety
 graph TD
     %% Layers Definition
     subgraph View ["View Layer (FTXUI TUI)"]
-        App["App Component (src/view/app.cpp)"]
+        AppView["AppView Component (src/view/app_view.cpp)"]
         LocView["LocationSearchView Modal (src/view/location_search_view.cpp)"]
         AboutView["AboutView Modal (src/view/about_view.cpp)"]
         WeatherIconView["WeatherIcon (src/view/weather_icon.cpp)"]
@@ -97,7 +97,7 @@ graph TD
 ## 2. Separation of Concerns Breakdown
 
 ### View Layer (FTXUI TUI)
-* **Components**: [app.cpp](../src/view/app.cpp), [location_search_view.cpp](../src/view/location_search_view.cpp), [about_view.cpp](../src/view/about_view.cpp), and [weather_icon.cpp](../src/view/weather_icon.cpp).
+* **Components**: [app_view.cpp](../src/view/app_view.cpp), [location_search_view.cpp](../src/view/location_search_view.cpp), [about_view.cpp](../src/view/about_view.cpp), and [weather_icon.cpp](../src/view/weather_icon.cpp).
 * **Role**: Orchestrates visual elements and coordinates TUI layout construction, borders, menus, custom canvas drawings, modals, and focus transitions. Translates weather metrics and WMO interpretation codes to UI descriptors and multi-line ASCII graphics.
 * **Separation Rule**: **No business logic, thread management, or network queries.** The View does not execute background threads or interact with the APIs directly. User interactions are immediately forwarded to Controllers. Views observe and bind reactively to the model states.
 
@@ -192,7 +192,7 @@ The `ForecastController` coordinates fetching current weather metrics from the O
 
 ```mermaid
 graph TD
-    AppView["App View (src/view/app.cpp)"]
+    AppView["AppView (src/view/app_view.cpp)"]
     ForecastCtrl["ForecastController (src/controller/forecast_controller.cpp)"]
     State["AppState (src/model/app_state.hpp)"]
     WeatherServ["WeatherService (src/service/weather_service.cpp)"]
@@ -227,7 +227,7 @@ The `DatabaseController` coordinates reading and writing favorite locations to l
 
 ```mermaid
 graph TD
-    AppView["App View (src/view/app.cpp)"]
+    AppView["AppView (src/view/app_view.cpp)"]
     LocCtrl["LocationController (src/controller/location_controller.cpp)"]
     DbCtrl["DatabaseController (src/controller/db_controller.cpp)"]
     Repo["LocationRepository (src/model/location_repository.hpp)"]
@@ -262,7 +262,7 @@ The `AboutController` manages toggling the application information modal layer.
 
 ```mermaid
 graph TD
-    AppView["App View (src/view/app.cpp)"]
+    AppView["AppView (src/view/app_view.cpp)"]
     AboutView["AboutView (src/view/about_view.cpp)"]
     AboutCtrl["AboutController (src/controller/about_controller.cpp)"]
     AboutState["AboutState (src/model/about_state.hpp)"]
@@ -292,7 +292,7 @@ The `AppController` coordinates parent coordinator tasks and mediates between ma
 
 ```mermaid
 graph TD
-    AppView["App View (src/view/app.cpp)"]
+    AppView["AppView (src/view/app_view.cpp)"]
     AppCtrl["AppController (src/controller/app_controller.cpp)"]
     State["AppState (src/model/app_state.hpp)"]
     LocCtrl["LocationController (src/controller/location_controller.cpp)"]

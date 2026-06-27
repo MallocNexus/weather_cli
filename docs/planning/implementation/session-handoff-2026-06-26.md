@@ -21,7 +21,7 @@ summary panel is driven by the WMO weather code + `is_day` flag.
 | `src/view/weather_icon.hpp/.cpp` | WMO → ASCII icon mapping; `GetIcon(wmo, is_day)`, `GetDescription(wmo)` |
 | `src/view/icons/weather_icons.hpp` | `kSunny`, `kCloudy`, `kRainy`, `kSnowy`, `kStormy`, `kClearNight` |
 | `src/model/app_state.hpp` | `std::optional<CurrentConditions> current_conditions` added |
-| `src/view/app.cpp` | Summary panel wired to live `cc` data; loading/error states handled |
+| `src/view/app_view.cpp` | Summary panel wired to live `cc` data; loading/error states handled |
 | `src/main.cpp` | `ForecastController` instantiated; `Refresh()` called at startup |
 
 ### Phase 16.2 — Country Filter in Location Search Modal ✅
@@ -83,7 +83,7 @@ All 7 steps complete (16.3.1–16.3.7).
 | `tests/controller/test_db_controller.cpp` | DB save/load |
 | `tests/util/test_formatting.cpp` | Formatting helpers |
 | `tests/util/test_constants.cpp` | `kCountryList` invariants (7 assertions) |
-| `tests/view/test_app.cpp` | App render smoke test |
+| `tests/view/test_app_view.cpp` | AppView render smoke test |
 | `tests/view/test_weather_icon.cpp` | `GetIcon()` all WMO groups + day/night path; `GetDescription()` |
 
 ---
@@ -116,7 +116,7 @@ src/
 │   └── formatting.hpp/.cpp
 └── view/
     ├── about_view.hpp/.cpp
-    ├── app.hpp/.cpp                      ← Summary panel wired to live CC data
+    ├── app_view.hpp/.cpp                 ← Summary panel wired to live CC data
     ├── component/
     │   └── after_event.hpp/.cpp          ← Reusable decorator helper component (OnAfterEvent)
     ├── icons/
@@ -134,7 +134,7 @@ src/
 | **MVC + DDD** | Services are stateless and throw on parse failure. Controllers manage async lifecycle. Views are pure render. |
 | **Concurrency** | Controllers use `atomic<uint64_t>` sequence counters. Background threads ignore stale results by comparing captured `fetch_id` to `current_fetch_id_`. State writes always happen under `state.mutex`. |
 | **Thread-safe redraw** | All state mutations that need a UI refresh call `trigger_redraw_` after releasing the mutex. |
-| **No mock data in prod** | All `app.cpp` rendering reads from `AppState` optionals. Loading/error/success states handled explicitly. |
+| **No mock data in prod** | All `app_view.cpp` rendering reads from `AppState` optionals. Loading/error/success states handled explicitly. |
 | **`is_day` flow** | `CurrentConditions.is_day` (1=day, 0=night) parsed from the API and forwarded to `WeatherIcon::GetIcon(wmo, is_day)` — never hard-coded in the view. |
 | **Country filter** | `LocationSearchState.country_filter` is the single source of truth. Both `country_filter` and `country_filter_index` must be kept in sync. `SetCountryFilter()` is the only mutation point. |
 | **Services throw** | Parse methods throw `nlohmann::json::out_of_range` on missing keys and `nlohmann::json::parse_error` on malformed JSON — never return empty/partial data. |

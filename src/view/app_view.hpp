@@ -12,9 +12,9 @@
 
 namespace weather_cli {
 
-class App {
+class AppView {
    public:
-    App(AppState& state, AppController& controller);
+    AppView(AppState& state, AppController& controller);
     ftxui::Component GetComponent();
 
    private:

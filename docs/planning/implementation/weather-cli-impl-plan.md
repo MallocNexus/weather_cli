@@ -50,8 +50,8 @@ weather-cli/
 │   │   └── app_controller.cpp        # Handles city searches, timeline slider updates, unit toggles
 │   │
 │   ├── view/                         # FTXUI Views & components
-│   │   ├── app.hpp                   # App View class
-│   │   ├── app.cpp                   # Main FTXUI layout manager
+│   │   ├── app_view.hpp              # AppView class
+│   │   ├── app_view.cpp              # Main FTXUI layout manager
 │   │   ├── weather_icon.hpp          # ASCII art mappings based on WMO codes
 │   │   ├── weather_icon.cpp          # Outputs multi-line weather icons
 │   │   ├── sparkline_graph.hpp       # Custom canvas renderer for temperatures & rain charts
@@ -178,7 +178,7 @@ target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
 
 # 4. app_lib: view layout components (depends on FTXUI)
 add_library(app_lib STATIC
-    src/view/app.cpp
+    src/view/app_view.cpp
     src/view/weather_icon.cpp
     src/view/sparkline_graph.cpp
 )
@@ -204,7 +204,7 @@ add_executable(run_tests
     tests/model/test_weather_data.cpp
     tests/service/test_weather_parser.cpp
     tests/controller/test_app_controller.cpp
-    tests/view/test_app.cpp
+    tests/view/test_app_view.cpp
 )
 target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controller_lib weather_lib)
 ```
@@ -290,8 +290,8 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
 - [x] Update object construction wiring in `src/main.cpp` to initialize controllers hierarchically.
 - [x] Create `tests/util/test_formatting.cpp` to verify temperature converters (Celsius/Fahrenheit) and time format utility methods.
 - [x] Create `tests/controller/test_app_controller.cpp` to verify `AppController` units toggle state, tab shifts, timeline slider index updates, and coordination/delegation to `LocationController`.
-- [x] Create `tests/view/test_app.cpp` to verify root View components initialize correctly, root tab defaults, and components getters behave gracefully without throwing exceptions.
-- [x] Update `CMakeLists.txt` to compile all new test source files (`test_formatting.cpp`, `test_app_controller.cpp`, `test_app.cpp`) in `run_tests`.
+- [x] Create `tests/view/test_app_view.cpp` to verify root View components initialize correctly, root tab defaults, and components getters behave gracefully without throwing exceptions.
+- [x] Update `CMakeLists.txt` to compile all new test source files (`test_formatting.cpp`, `test_app_controller.cpp`, `test_app_view.cpp`) in `run_tests`.
 - [x] Update the `docs/separation-of-concerns.md` document diagrams to reflect the strict 1-to-1 View-to-Controller bindings.
 
 ### Phase 10 — App Version and Standalone About/Version Modal View ✅ Done
@@ -312,7 +312,7 @@ target_link_libraries(run_tests PRIVATE Catch2::Catch2WithMain app_lib controlle
   - [x] Implement `AppController::SelectSavedLocation(int saved_index)` to coordinate selection of saved database locations.
 - [x] **View Overlay & Dynamic Dropdown**:
   - [x] Add a `save_to_db` Checkbox component inside [LocationSearchView](file:///Users/mattswart/Source/CPP/weather-cli/src/view/location_search_view.hpp).
-  - [x] Rebuild `locations_entries_` dynamically inside [app.cpp](file:///Users/mattswart/Source/CPP/weather-cli/src/view/app.cpp) based on `LocationRepository::saved_locations` contents, starting with no entries until saved.
+  - [x] Rebuild `locations_entries_` dynamically inside [app_view.cpp](file:///Users/mattswart/Source/CPP/weather-cli/src/view/app_view.cpp) based on `LocationRepository::saved_locations` contents, starting with no entries until saved.
   - [x] Route dropdown clicks to `SelectSavedLocation` or `OpenSearch` dynamically.
 - [x] **Unit Tests & Integration**:
   - [x] Create `tests/controller/test_db_controller.cpp` to verify SQLite CRUD queries and state updates.
@@ -501,15 +501,15 @@ Wire the Open-Meteo API for live current conditions and drive the ASCII icon in 
   - [x] Call `forecast_controller.Refresh()` once on startup (triggers the first background fetch).
 - [x] **Files changed:** `src/model/app_state.hpp`, `src/controller/forecast_controller.hpp` (new), `src/controller/forecast_controller.cpp` (new), `src/controller/app_controller.hpp`, `src/controller/app_controller.cpp`, `src/main.cpp`.
 
-#### Step 16.1.6 — Wire Live Data Into the Summary Panel (`app.cpp`) ✅ Done
-- [x] Replace all three hardcoded mock variables in the summary panel in `src/view/app.cpp` with values from `state_.current_conditions` (`std::optional`), falling back to `0.0` / `0` when `nullopt`:
+#### Step 16.1.6 — Wire Live Data Into the Summary Panel (`app_view.cpp`) ✅ Done
+- [x] Replace all three hardcoded mock variables in the summary panel in `src/view/app_view.cpp` with values from `state_.current_conditions` (`std::optional`), falling back to `0.0` / `0` when `nullopt`:
   - [x] `current_temp`, `max_temp`, `min_temp`, `humidity`, `wind_speed_v`, `wmo_code`.
 - [x] Replace the static `icons::kRainy` icon with `WeatherIcon::GetIcon(wmo_code)`.
 - [x] Replace the hardcoded `"Condition: Light Rain"` string with `"Condition: " + WeatherIcon::GetDescription(wmo_code)`.
 - [x] Replace the mock wind speed calculation (`8 + (selected_hour * 2) % 20`) in the summary panel with `cc->wind_speed` (hourly slider mock values stay — those are Phase 16.2 scope).
 - [x] Show `"Loading..."` in the condition line when `state_.is_loading` is `true`.
-- [x] Add `#include "view/weather_icon.hpp"` to `src/view/app.hpp`.
-- [x] **Files changed:** `src/view/app.cpp`, `src/view/app.hpp`.
+- [x] Add `#include "view/weather_icon.hpp"` to `src/view/app_view.hpp`.
+- [x] **Files changed:** `src/view/app_view.cpp`, `src/view/app_view.hpp`.
 
 #### Step 16.1.7 — CMake Integration & Tests ✅ Done
 - [x] Update `CMakeLists.txt`:
@@ -787,7 +787,7 @@ Specific `CatchEvent` edits in `src/view/location_search_view.cpp`:
 - [ ] Extend `WeatherService` with `FetchHourlyForecast(double lat, double lon)` returning `std::optional<HourlyData>` for a 7-day / 168-hour window.
 - [ ] Add `std::optional<HourlyData> hourly_data` to `AppState`.
 - [ ] Update `ForecastController::Refresh()` to also fetch hourly data in the same background call.
-- [ ] Wire `hourly_data` into the hourly detail panel and timeline slider in `app.cpp` — replacing mock temperature/rain/wind calculations.
+- [ ] Wire `hourly_data` into the hourly detail panel and timeline slider in `app_view.cpp` — replacing mock temperature/rain/wind calculations.
 - [ ] Add Catch2 tests for hourly JSON parsing and controller wiring.
 
 
@@ -805,7 +805,7 @@ Specific `CatchEvent` edits in `src/view/location_search_view.cpp`:
 - [ ] Update `docs/separation-of-concerns.md` Mermaid diagrams and layer descriptions to reflect `WeatherService`, `ForecastController`, and `ForecastCache` additions.
 
 ### Phase 17 — Visual Component Integration (ASCII Icon & Sparkline Plotter)
-- [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app.cpp`.
+- [ ] Implement multi-line ASCII art rendering in `src/view/weather_icon.hpp/cpp` and replace the static mock cloud text in `app_view.cpp`.
 - [ ] Develop dynamic line plotting in `src/view/sparkline_graph.hpp/cpp` using FTXUI `Canvas` drawing APIs and wire it to replace the static diagnostic line.
 - [ ] Wire location search query suggestions list input in view and controller.
 

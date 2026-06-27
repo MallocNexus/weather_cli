@@ -91,7 +91,7 @@ target_link_libraries(controller_lib PUBLIC weather_lib util_lib)
 # Layer 3: View
 # ---------------------------------------------------------------------------
 add_library(app_lib STATIC
-    src/view/app.cpp
+    src/view/app_view.cpp
     src/view/location_search_view.cpp
     src/view/about_view.cpp
     src/view/weather_icon.cpp
@@ -129,7 +129,7 @@ add_executable(run_tests
     tests/controller/test_forecast_controller.cpp
     tests/util/test_formatting.cpp
     tests/util/test_constants.cpp
-    tests/view/test_app.cpp
+    tests/view/test_app_view.cpp
     tests/view/test_weather_icon.cpp
 )
 target_include_directories(run_tests PUBLIC src/)

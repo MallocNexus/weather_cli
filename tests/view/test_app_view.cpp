@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "view/app.hpp"
+#include "view/app_view.hpp"
 #include "controller/app_controller.hpp"
 #include "controller/location_controller.hpp"
 #include "controller/location_search_controller.hpp"
@@ -10,7 +10,7 @@
 #include "model/about_state.hpp"
 #include "model/location_repository.hpp"
 
-TEST_CASE("App View Layout Component Verification", "[view][app]") {
+TEST_CASE("AppView Layout Component Verification", "[view][app]") {
     using namespace weather_cli;
 
     AppState state;
@@ -24,8 +24,8 @@ TEST_CASE("App View Layout Component Verification", "[view][app]") {
     ForecastController forecast_controller(state, []() {});
     AppController controller(state, loc_controller, loc_search_controller, about_controller, db_controller, forecast_controller, []() {});
 
-    SECTION("App view constructor and component retrieval succeed") {
-        App app(state, controller);
+    SECTION("AppView constructor and component retrieval succeed") {
+        AppView app(state, controller);
         auto comp = app.GetComponent();
         REQUIRE(comp != nullptr);
     }

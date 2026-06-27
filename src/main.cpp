@@ -20,7 +20,7 @@
 #include "controller/db_controller.hpp"
 #include "controller/forecast_controller.hpp"
 #include "service/geocoding_service.hpp"
-#include "view/app.hpp"
+#include "view/app_view.hpp"
 #include "util/constants.hpp"
 
 int main(int argc, char* argv[]) {
@@ -104,12 +104,12 @@ int main(int argc, char* argv[]) {
 
         AppController controller(state, loc_controller, loc_search_controller, about_controller, db_controller, forecast_controller, screen.ExitLoopClosure());
 
-        App app(state, controller);
+        AppView app_view(state, controller);
 
         // Trigger the initial weather fetch before entering the render loop.
         forecast_controller.Refresh();
 
-        screen.Loop(app.GetComponent());
+        screen.Loop(app_view.GetComponent());
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
         std::cerr << "Fatal TUI Error: " << e.what() << "\n";

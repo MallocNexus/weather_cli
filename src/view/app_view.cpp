@@ -1,4 +1,4 @@
-#include "view/app.hpp"
+#include "view/app_view.hpp"
 #include <cmath>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -12,7 +12,7 @@ using namespace ftxui;
 
 namespace weather_cli {
 
-App::App(AppState& state, AppController& controller)
+AppView::AppView(AppState& state, AppController& controller)
     : state_(state), controller_(controller),
       location_search_view_(controller.GetLocationSearchController()),
       about_view_(controller.GetAboutController()) {
@@ -244,7 +244,7 @@ App::App(AppState& state, AppController& controller)
     });
 }
 
-Component App::GetComponent() {
+Component AppView::GetComponent() {
     return main_renderer_;
 }
 
